@@ -1,0 +1,164 @@
+// Import IBM Carbon Design System styles
+@use '@carbon/react/scss/config' with (
+  $prefix: 'cds'
+);
+@use '@carbon/react';
+
+// Import IBM Plex fonts
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap');
+
+// Custom CSS variables for AI enhancements
+:root {
+  --ai-primary-start: #0f62fe;
+  --ai-primary-end: #8a3ffc;
+  --ai-background: linear-gradient(135deg, rgba(15, 98, 254, 0.08) 0%, rgba(138, 63, 252, 0.08) 100%);
+  --ai-border: linear-gradient(135deg, #0f62fe 0%, #8a3ffc 100%);
+  --ai-glow: 0 0 16px rgba(15, 98, 254, 0.3);
+  --ai-text: #0f62fe;
+}
+
+// Global styles
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--cds-background);
+  color: var(--cds-text-primary);
+}
+
+code {
+  font-family: 'IBM Plex Mono', source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+// Application layout
+.app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.main-content {
+  flex: 1;
+  padding: var(--cds-spacing-05);
+  overflow-y: auto;
+}
+
+// AI-enhanced components
+.ai-enhanced {
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    background: var(--ai-border);
+    border-radius: inherit;
+    z-index: -1;
+  }
+}
+
+.ai-gradient-border {
+  background: var(--ai-border);
+  padding: 2px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cds-spacing-02);
+  
+  .ai-icon {
+    color: white;
+  }
+  
+  span {
+    color: white;
+    font-size: var(--cds-productive-heading-01-font-size);
+    font-weight: var(--cds-productive-heading-01-font-weight);
+  }
+}
+
+// Context cards
+.context-card {
+  background: var(--cds-layer-01);
+  border: 1px solid var(--cds-border-subtle-01);
+  border-radius: 4px;
+  padding: var(--cds-spacing-05);
+  margin-bottom: var(--cds-spacing-03);
+  transition: all 150ms ease;
+  
+  &:hover {
+    background: var(--cds-layer-hover-01);
+    border-color: var(--cds-border-strong-01);
+    transform: translateY(-2px);
+  }
+  
+  &.ai-card {
+    @extend .ai-enhanced;
+  }
+}
+
+// Graph visualization
+.graph-container {
+  background: var(--cds-layer-01);
+  border: 1px solid var(--cds-border-subtle-01);
+  border-radius: 4px;
+  height: 600px;
+  position: relative;
+  
+  .graph-node {
+    cursor: pointer;
+    transition: all 110ms ease;
+    
+    &:hover {
+      filter: brightness(1.2);
+      transform: scale(1.2);
+    }
+    
+    &.selected {
+      stroke: var(--cds-focus);
+      stroke-width: 3px;
+    }
+  }
+  
+  .graph-link {
+    stroke: var(--cds-border-subtle-01);
+    stroke-opacity: 0.6;
+    
+    &.strong-relationship {
+      stroke: var(--cds-link-primary);
+      stroke-width: 2px;
+    }
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .app-content {
+    flex-direction: column;
+  }
+  
+  .main-content {
+    padding: var(--cds-spacing-03);
+  }
+  
+  .graph-container {
+    height: 400px;
+  }
+}

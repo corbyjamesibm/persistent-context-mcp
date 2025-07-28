@@ -37,6 +37,8 @@ export interface ContextMetadata {
   templateCount: number;
   lastAccessed: Date;
   aiGenerated: boolean;
+  source?: string;
+  importance?: 'low' | 'medium' | 'high';
 }
 
 export interface ContextRelationship {

@@ -8,6 +8,7 @@
 import dotenv from 'dotenv';
 import { createServer } from './api/server.js';
 import { Neo4jContextStore } from './core/storage/neo4j-store.js';
+import { ContextManagerService } from './core/services/context-manager.service.js';
 import { logger } from './utils/logger.js';
 
 // Load environment variables
@@ -27,11 +28,23 @@ async function startServer() {
       password: NEO4J_PASSWORD,
     });
 
-    await contextStore.connect();
-    logger.info('Connected to Neo4j database');
+    // Initialize Context Manager with auto-save capabilities
+    const contextManager = new ContextManagerService(contextStore, {
+      autoSave: {
+        intervalMs: 30000, // 30 seconds
+        maxRetries: 3,
+        retryDelayMs: 1000,
+        saveTimeoutMs: 5000,
+      },
+      enableNotifications: true,
+      maxSessionHistory: 100,
+    });
+
+    await contextManager.initialize();
+    logger.info('Context Manager initialized with auto-save capabilities');
 
     // Initialize Express server
-    const app = createServer(contextStore);
+    const app = createServer(contextStore, contextManager);
     
     const server = app.listen(PORT, () => {
       logger.info(`Persistent Context Store server running on port ${PORT}`);
@@ -41,16 +54,16 @@ async function startServer() {
     // Graceful shutdown
     process.on('SIGTERM', async () => {
       logger.info('SIGTERM received, shutting down gracefully');
-      server.close(() => {
-        contextStore.disconnect();
+      server.close(async () => {
+        await contextManager.shutdown();
         process.exit(0);
       });
     });
 
     process.on('SIGINT', async () => {
       logger.info('SIGINT received, shutting down gracefully');
-      server.close(() => {
-        contextStore.disconnect();
+      server.close(async () => {
+        await contextManager.shutdown();
         process.exit(0);
       });
     });

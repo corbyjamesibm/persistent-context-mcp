@@ -94,6 +94,10 @@ jspm_packages/
 
 # Neo4j
 neo4j/
+data/
+import/
+plugins/
+conf/
 
 # Test files
 test-results/
@@ -103,3 +107,33 @@ test-output/
 # Temporary files
 tmp/
 temp/
+
+# Context storage (don't commit actual context data)
+contexts/data/
+contexts/backups/
+
+# Web dashboard build files
+src/web/admin-dashboard/build/
+src/web/admin-dashboard/dist/
+
+# MCP build artifacts
+mcp/build/
+
+# Documentation build
+docs/api/
+docs/build/
+
+# Backup files
+backups/
+*.backup
+*.bak
+
+# SSL certificates
+*.pem
+*.key
+*.crt
+*.cert
+
+# Analytics and monitoring
+analytics/
+metrics/

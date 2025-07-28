@@ -1,0 +1,237 @@
+{
+  "analytics": {
+    "enabled": true,
+    "dataRetention": {
+      "rawData": "365d",
+      "aggregatedData": "2y",
+      "reports": "90d"
+    },
+    "collection": {
+      "metricsInterval": 60000,
+      "aggregationInterval": 86400000,
+      "performanceTracking": true,
+      "userActivityTracking": true,
+      "contentAnalytics": true
+    },
+    "reporting": {
+      "enabled": true,
+      "formats": ["json", "csv", "pdf", "xlsx"],
+      "maxReportSize": "50MB",
+      "reportRetention": "90d",
+      "scheduledReports": {
+        "enabled": true,
+        "maxScheduled": 10,
+        "emailNotifications": true
+      }
+    },
+    "export": {
+      "enabled": true,
+      "maxExportSize": "100MB",
+      "allowedFormats": ["json", "csv", "xlsx"],
+      "rateLimiting": {
+        "requestsPerHour": 5,
+        "maxConcurrentExports": 2
+      }
+    },
+    "dashboard": {
+      "refreshInterval": 30000,
+      "autoRefresh": true,
+      "defaultTimeRange": "30d",
+      "defaultAggregation": "daily",
+      "charts": {
+        "enabled": true,
+        "maxDataPoints": 1000,
+        "animationsEnabled": true
+      }
+    },
+    "alerts": {
+      "enabled": true,
+      "thresholds": {
+        "highMemoryUsage": 80,
+        "highErrorRate": 5,
+        "lowCacheHitRate": 70,
+        "highResponseTime": 1000
+      },
+      "notifications": {
+        "email": {
+          "enabled": false,
+          "recipients": []
+        },
+        "webhook": {
+          "enabled": false,
+          "url": "${ANALYTICS_WEBHOOK_URL}"
+        }
+      }
+    },
+    "privacy": {
+      "anonymizeUserData": false,
+      "excludeFields": [],
+      "dataRetentionCompliance": "GDPR",
+      "allowDataDeletion": true
+    },
+    "performance": {
+      "queryTimeout": 30000,
+      "maxConcurrentQueries": 5,
+      "caching": {
+        "enabled": true,
+        "ttl": 3600,
+        "maxCacheSize": "256MB"
+      },
+      "indexing": {
+        "autoOptimize": true,
+        "rebuildInterval": "weekly"
+      }
+    },
+    "integrations": {
+      "external": {
+        "googleAnalytics": {
+          "enabled": false,
+          "trackingId": "${GA_TRACKING_ID}"
+        },
+        "mixpanel": {
+          "enabled": false,
+          "projectToken": "${MIXPANEL_TOKEN}"
+        },
+        "segment": {
+          "enabled": false,
+          "writeKey": "${SEGMENT_WRITE_KEY}"
+        }
+      },
+      "webhooks": {
+        "onReportGenerated": "${REPORT_WEBHOOK_URL}",
+        "onAnomalyDetected": "${ANOMALY_WEBHOOK_URL}",
+        "onThresholdExceeded": "${THRESHOLD_WEBHOOK_URL}"
+      }
+    },
+    "storage": {
+      "provider": "filesystem",
+      "config": {
+        "filesystem": {
+          "basePath": "/var/analytics",
+          "compression": true,
+          "encryption": false
+        },
+        "s3": {
+          "bucket": "${ANALYTICS_S3_BUCKET}",
+          "region": "${AWS_REGION}",
+          "accessKeyId": "${AWS_ACCESS_KEY_ID}",
+          "secretAccessKey": "${AWS_SECRET_ACCESS_KEY}"
+        },
+        "gcs": {
+          "bucket": "${ANALYTICS_GCS_BUCKET}",
+          "projectId": "${GCP_PROJECT_ID}",
+          "keyFilename": "${GCP_KEY_FILE}"
+        }
+      }
+    },
+    "security": {
+      "requireAuthentication": true,
+      "allowedRoles": ["admin", "analyst"],
+      "auditLogging": true,
+      "accessControl": {
+        "userDataAccess": "own_data_only",
+        "reportGeneration": "authenticated_users",
+        "dataExport": "admin_only"
+      }
+    },
+    "features": {
+      "realTimeAnalytics": {
+        "enabled": true,
+        "updateInterval": 5000,
+        "maxConnections": 100
+      },
+      "predictiveAnalytics": {
+        "enabled": false,
+        "modelUpdateInterval": "weekly",
+        "minDataPoints": 1000
+      },
+      "anomalyDetection": {
+        "enabled": true,
+        "sensitivity": "medium",
+        "alertThreshold": 2.0
+      },
+      "customMetrics": {
+        "enabled": true,
+        "maxCustomMetrics": 50,
+        "allowUserDefinedMetrics": true
+      }
+    },
+    "visualization": {
+      "charts": {
+        "library": "recharts",
+        "theme": "carbon",
+        "responsiveDesign": true,
+        "interactivity": {
+          "zoom": true,
+          "pan": true,
+          "hover": true,
+          "tooltip": true
+        }
+      },
+      "colors": {
+        "primary": "#0f62fe",
+        "secondary": "#393939",
+        "success": "#24a148",
+        "warning": "#f1c21b",
+        "error": "#da1e28",
+        "info": "#0043ce"
+      },
+      "customization": {
+        "allowCustomDashboards": true,
+        "allowCustomCharts": true,
+        "allowLayoutChanges": true
+      }
+    },
+    "api": {
+      "rateLimiting": {
+        "enabled": true,
+        "requests": {
+          "perMinute": 100,
+          "perHour": 1000,
+          "perDay": 10000
+        },
+        "burst": 10
+      },
+      "caching": {
+        "enabled": true,
+        "ttl": 300,
+        "varyByUser": true,
+        "varyByQuery": true
+      },
+      "pagination": {
+        "defaultLimit": 100,
+        "maxLimit": 1000
+      },
+      "compression": {
+        "enabled": true,
+        "threshold": 1024,
+        "level": 6
+      }
+    },
+    "monitoring": {
+      "healthCheck": {
+        "enabled": true,
+        "interval": 30000,
+        "endpoints": ["/health", "/metrics"]
+      },
+      "metrics": {
+        "prometheus": {
+          "enabled": false,
+          "endpoint": "/metrics",
+          "prefix": "analytics_"
+        },
+        "statsd": {
+          "enabled": false,
+          "host": "${STATSD_HOST}",
+          "port": "${STATSD_PORT}"
+        }
+      },
+      "logging": {
+        "level": "info",
+        "structured": true,
+        "includeStackTrace": false,
+        "sanitizeSensitiveData": true
+      }
+    }
+  }
+}

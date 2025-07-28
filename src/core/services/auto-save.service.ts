@@ -13,6 +13,8 @@ export interface AutoSaveConfig {
   maxRetries: number; // Maximum retry attempts (default: 3)
   retryDelayMs: number; // Delay between retries in milliseconds (default: 1000)
   saveTimeoutMs: number; // Maximum time for save operation (default: 5000)
+  enableSessionPrompts: boolean; // Whether to prompt before saving at session end (default: false)
+  promptTimeoutMs: number; // How long to wait for prompt response (default: 30000)
 }
 
 export interface SaveResult {
@@ -30,6 +32,8 @@ export interface PendingContext {
   isUpdate: boolean;
   lastModified: Date;
   retryCount: number;
+  requiresPrompt?: boolean; // Whether this context needs user confirmation before saving
+  promptResponse?: boolean; // User's response to save prompt (true = save, false = discard)
 }
 
 export class AutoSaveService extends EventEmitter {
@@ -48,6 +52,8 @@ export class AutoSaveService extends EventEmitter {
       maxRetries: 3,
       retryDelayMs: 1000, // 1 second
       saveTimeoutMs: 5000, // 5 seconds
+      enableSessionPrompts: false,
+      promptTimeoutMs: 30000, // 30 seconds
       ...config,
     };
   }
@@ -88,7 +94,7 @@ export class AutoSaveService extends EventEmitter {
   /**
    * Queue a context for automatic saving
    */
-  queueContext(sessionId: string, data: CreateContextRequest | UpdateContextRequest, contextId?: string): void {
+  queueContext(sessionId: string, data: CreateContextRequest | UpdateContextRequest, contextId?: string, requiresPrompt?: boolean): void {
     const isUpdate = !!contextId;
     const pendingContext: PendingContext = {
       id: contextId,
@@ -96,11 +102,12 @@ export class AutoSaveService extends EventEmitter {
       isUpdate,
       lastModified: new Date(),
       retryCount: 0,
+      requiresPrompt: requiresPrompt || this.config.enableSessionPrompts,
     };
 
     this.pendingContexts.set(sessionId, pendingContext);
-    logger.debug(`Context queued for auto-save: session=${sessionId}, isUpdate=${isUpdate}`);
-    this.emit('contextQueued', { sessionId, isUpdate });
+    logger.debug(`Context queued for auto-save: session=${sessionId}, isUpdate=${isUpdate}, requiresPrompt=${pendingContext.requiresPrompt}`);
+    this.emit('contextQueued', { sessionId, isUpdate, requiresPrompt: pendingContext.requiresPrompt });
   }
 
   /**
@@ -138,6 +145,95 @@ export class AutoSaveService extends EventEmitter {
   }
 
   /**
+   * Respond to a save prompt for a session
+   */
+  respondToSavePrompt(sessionId: string, shouldSave: boolean): boolean {
+    const pendingContext = this.pendingContexts.get(sessionId);
+    if (!pendingContext || !pendingContext.requiresPrompt) {
+      logger.warn(`No prompt pending for session ${sessionId}`);
+      return false;
+    }
+
+    pendingContext.promptResponse = shouldSave;
+    pendingContext.requiresPrompt = false;
+    
+    logger.info(`Save prompt response for session ${sessionId}: ${shouldSave ? 'save' : 'discard'}`);
+    this.emit('promptResponse', { sessionId, shouldSave });
+
+    if (!shouldSave) {
+      // Remove from pending contexts if user chose not to save
+      this.pendingContexts.delete(sessionId);
+      this.emit('contextDiscarded', { sessionId });
+    }
+
+    return true;
+  }
+
+  /**
+   * Get sessions that are waiting for save prompts
+   */
+  getSessionsAwaitingPrompt(): string[] {
+    const sessions: string[] = [];
+    for (const [sessionId, context] of this.pendingContexts) {
+      if (context.requiresPrompt && context.promptResponse === undefined) {
+        sessions.push(sessionId);
+      }
+    }
+    return sessions;
+  }
+
+  /**
+   * Trigger save prompts for all sessions that require them
+   */
+  async triggerSessionPrompts(): Promise<void> {
+    const sessionsAwaitingPrompt = this.getSessionsAwaitingPrompt();
+    
+    if (sessionsAwaitingPrompt.length === 0) {
+      return;
+    }
+
+    logger.info(`Triggering save prompts for ${sessionsAwaitingPrompt.length} sessions`);
+    
+    for (const sessionId of sessionsAwaitingPrompt) {
+      const pendingContext = this.pendingContexts.get(sessionId);
+      if (pendingContext) {
+        this.emit('savePromptRequired', { 
+          sessionId, 
+          contextTitle: pendingContext.data.title,
+          contextType: pendingContext.data.type,
+          lastModified: pendingContext.lastModified
+        });
+      }
+    }
+
+    // Set up timeout for prompt responses
+    setTimeout(() => {
+      this.handlePromptTimeouts();
+    }, this.config.promptTimeoutMs);
+  }
+
+  /**
+   * Handle timeouts for unanswered prompts
+   */
+  private handlePromptTimeouts(): void {
+    const timedOutSessions: string[] = [];
+    
+    for (const [sessionId, context] of this.pendingContexts) {
+      if (context.requiresPrompt && context.promptResponse === undefined) {
+        // Default to save if no response received
+        context.promptResponse = true;
+        context.requiresPrompt = false;
+        timedOutSessions.push(sessionId);
+      }
+    }
+
+    if (timedOutSessions.length > 0) {
+      logger.warn(`Save prompts timed out for ${timedOutSessions.length} sessions, defaulting to save`);
+      this.emit('promptTimeout', { sessionIds: timedOutSessions });
+    }
+  }
+
+  /**
    * Schedule the next automatic save cycle
    */
   private scheduleNextSave(): void {
@@ -167,6 +263,19 @@ export class AutoSaveService extends EventEmitter {
     const pendingEntries = Array.from(this.pendingContexts.entries());
 
     for (const [sessionId, pendingContext] of pendingEntries) {
+      // Skip contexts that require prompts but haven't been responded to
+      if (pendingContext.requiresPrompt && pendingContext.promptResponse === undefined) {
+        logger.debug(`Skipping auto-save for session ${sessionId} - awaiting prompt response`);
+        continue;
+      }
+
+      // Skip contexts where user chose not to save
+      if (pendingContext.promptResponse === false) {
+        logger.debug(`Skipping auto-save for session ${sessionId} - user chose not to save`);
+        this.pendingContexts.delete(sessionId);
+        continue;
+      }
+
       savePromises.push(
         this.performSave(sessionId, pendingContext)
           .then(result => {

@@ -8,16 +8,53 @@ import helmet from 'helmet';
 import compression from 'compression';
 import { Neo4jContextStore } from '../core/storage/neo4j-store.js';
 import { ContextManagerService } from '../core/services/context-manager.service.js';
+import { PersistentContextStoreApp } from '../app.js';
+import { registerHealthRoutes } from './routes/health.js';
+import { registerPerformanceRoutes } from './routes/performance.js';
+import { registerLLMMemoryRoutes } from './routes/llm-memory.js';
+import { registerLLMSessionRoutes } from './routes/llm-sessions.js';
+import { llmCors, authErrorHandler } from './middleware/auth.js';
 import { logger } from '../utils/logger.js';
 
 export function createServer(
   contextStore: Neo4jContextStore,
-  contextManager?: ContextManagerService
+  contextManager?: ContextManagerService,
+  app?: PersistentContextStoreApp
 ): express.Application {
-  const app = express();
+  const server = express();
+
+  // Health monitoring setup (if app instance provided)
+  if (app) {
+    // Register comprehensive health routes
+    registerHealthRoutes(server, app);
+    
+    // Register performance monitoring routes
+    registerPerformanceRoutes(server, app);
+    
+    // Request tracking for health and performance metrics
+    server.use((req, res, next) => {
+      const startTime = Date.now();
+      
+      app.healthMonitor.recordRequest();
+      
+      res.on('finish', () => {
+        const responseTime = Date.now() - startTime;
+        const success = res.statusCode < 400;
+        
+        // Record performance metrics
+        app.performanceMonitor.recordOperation('httpRequest', responseTime, success);
+        
+        // Record health metrics
+        if (!success) {
+          app.healthMonitor.recordError();
+        }
+      });
+      next();
+    });
+  }
 
   // Security middleware
-  app.use(helmet({
+  server.use(helmet({
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
@@ -30,18 +67,18 @@ export function createServer(
   }));
 
   // CORS configuration
-  app.use(cors({
+  server.use(cors({
     origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
     credentials: true,
   }));
 
   // Compression and parsing middleware
-  app.use(compression());
-  app.use(express.json({ limit: '10mb' }));
-  app.use(express.urlencoded({ extended: true }));
+  server.use(compression());
+  server.use(express.json({ limit: '10mb' }));
+  server.use(express.urlencoded({ extended: true }));
 
   // Request logging middleware
-  app.use((req, res, next) => {
+  server.use((req, res, next) => {
     logger.info(`${req.method} ${req.path}`, {
       ip: req.ip,
       userAgent: req.get('User-Agent'),
@@ -49,17 +86,31 @@ export function createServer(
     next();
   });
 
-  // Health check endpoint
-  app.get('/health', (req, res) => {
-    res.json({ 
-      status: 'healthy', 
-      timestamp: new Date().toISOString(),
-      service: 'persistent-context-store'
+  // Basic health check endpoint (fallback if app not provided)
+  if (!app) {
+    server.get('/health', (req, res) => {
+      res.json({ 
+        status: 'healthy', 
+        timestamp: new Date().toISOString(),
+        service: 'persistent-context-store'
+      });
     });
-  });
+  }
 
   // API routes
   const apiRouter = express.Router();
+
+  // LLM-specific CORS and routes (if app instance provided)
+  if (app) {
+    // Add LLM CORS support
+    apiRouter.use(llmCors());
+    
+    // Register LLM memory routes
+    registerLLMMemoryRoutes(apiRouter, app);
+    
+    // Register LLM session routes  
+    registerLLMSessionRoutes(apiRouter, app);
+  }
 
   // Context routes
   apiRouter.get('/contexts', async (req, res) => {
@@ -216,18 +267,24 @@ export function createServer(
   }
 
   // Mount API routes
-  app.use('/api/v1', apiRouter);
+  server.use('/api/v1', apiRouter);
+
+  // LLM authentication error handler
+  server.use(authErrorHandler());
 
   // Error handling middleware
-  app.use((error: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  server.use((error: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
     logger.error('Unhandled error:', error);
+    if (app) {
+      app.healthMonitor.recordError();
+    }
     res.status(500).json({ error: 'Internal server error' });
   });
 
   // 404 handler
-  app.use((req, res) => {
+  server.use((req, res) => {
     res.status(404).json({ error: 'Not found' });
   });
 
-  return app;
+  return server;
 }

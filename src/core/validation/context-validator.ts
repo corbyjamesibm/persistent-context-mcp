@@ -367,7 +367,7 @@ export class ContextValidator {
     }
 
     // Last accessed should not be in the future
-    if (data.metadata.lastAccessed > new Date()) {
+    if (data.metadata.lastAccessed && data.metadata.lastAccessed > new Date()) {
       errors.push({
         field: 'metadata.lastAccessed',
         message: 'Last accessed date cannot be in the future',
@@ -377,7 +377,7 @@ export class ContextValidator {
     }
 
     // Metadata consistency
-    if (data.metadata.interactions < 0) {
+    if (data.metadata.interactions !== undefined && data.metadata.interactions < 0) {
       errors.push({
         field: 'metadata.interactions',
         message: 'Interactions count cannot be negative',

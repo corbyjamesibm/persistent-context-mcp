@@ -15,6 +15,7 @@ export interface ContextManagerConfig {
   autoSave: Partial<AutoSaveConfig>;
   enableNotifications: boolean;
   maxSessionHistory: number;
+  enableSessionEndPrompts: boolean; // Whether to prompt at session end
 }
 
 export interface SessionInfo {
@@ -43,6 +44,7 @@ export class ContextManagerService extends EventEmitter {
       autoSave: {},
       enableNotifications: true,
       maxSessionHistory: 50,
+      enableSessionEndPrompts: false,
       ...config,
     };
 
@@ -242,19 +244,132 @@ export class ContextManagerService extends EventEmitter {
   }
 
   /**
+   * Handle session end - prompt user to save if enabled
+   */
+  async handleSessionEnd(sessionId: string): Promise<{ promptRequired: boolean; contextDetails?: any }> {
+    const sessionInfo = this.activeSessions.get(sessionId);
+    if (!sessionInfo || !sessionInfo.hasPendingChanges) {
+      logger.debug(`No pending changes for session ${sessionId} on end`);
+      return { promptRequired: false };
+    }
+
+    if (!this.config.enableSessionEndPrompts) {
+      // Auto-save without prompting
+      await this.autoSaveService.triggerSessionPrompts();
+      return { promptRequired: false };
+    }
+
+    // Trigger prompt for this session
+    const sessionsAwaitingPrompt = this.autoSaveService.getSessionsAwaitingPrompt();
+    if (!sessionsAwaitingPrompt.includes(sessionId)) {
+      // Mark session as requiring prompt
+      this.autoSaveService.queueContext(sessionId, { 
+        title: `Session End Context - ${sessionId}`, 
+        content: 'Context saved at session end',
+        type: 'general' as any 
+      }, undefined, true);
+    }
+
+    await this.autoSaveService.triggerSessionPrompts();
+    
+    return { 
+      promptRequired: true,
+      contextDetails: {
+        sessionId,
+        lastActivity: sessionInfo.lastActivity,
+        contextCount: sessionInfo.contextCount,
+      }
+    };
+  }
+
+  /**
+   * Respond to save prompt
+   */
+  respondToSavePrompt(sessionId: string, shouldSave: boolean): boolean {
+    return this.autoSaveService.respondToSavePrompt(sessionId, shouldSave);
+  }
+
+  /**
+   * Get sessions awaiting save prompts
+   */
+  getSessionsAwaitingPrompt(): string[] {
+    return this.autoSaveService.getSessionsAwaitingPrompt();
+  }
+
+  /**
+   * Enable or disable session end prompts
+   */
+  setSessionEndPrompts(enabled: boolean): void {
+    this.config.enableSessionEndPrompts = enabled;
+    // Update auto-save service config as well
+    this.autoSaveService['config'].enableSessionPrompts = enabled;
+    logger.info(`Session end prompts ${enabled ? 'enabled' : 'disabled'}`);
+    this.emit('sessionPromptConfigChanged', { enabled });
+  }
+
+  /**
+   * Save context with optional prompt requirement
+   */
+  async saveContextWithPrompt(
+    sessionId: string,
+    data: CreateContextRequest,
+    requirePrompt: boolean = false
+  ): Promise<{ success: boolean; contextId?: string; error?: string; promptRequired?: boolean }> {
+    try {
+      // Validate data first
+      const validationResult = this.contextValidator.validateCreateRequest(data, {
+        autoRepair: true,
+        createBackup: true,
+        strictMode: false,
+        allowPartialData: false,
+      });
+
+      if (!validationResult.isValid) {
+        const errorMessages = validationResult.errors.map(e => `${e.field}: ${e.message}`).join(', ');
+        return { success: false, error: `Validation failed: ${errorMessages}` };
+      }
+
+      const dataToSave = validationResult.repairedData || data;
+
+      if (requirePrompt || this.config.enableSessionEndPrompts) {
+        // Queue with prompt requirement
+        this.autoSaveService.queueContext(sessionId, dataToSave, undefined, true);
+        this.updateSessionInfo(sessionId);
+        
+        return { 
+          success: true, 
+          promptRequired: true,
+          contextId: undefined // Will be available after prompt response
+        };
+      } else {
+        // Save immediately
+        return await this.saveContextImmediate(sessionId, dataToSave);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`Context save with prompt failed for session ${sessionId}:`, error);
+      return { success: false, error: errorMessage };
+    }
+  }
+
+  /**
    * Get system status including pending saves and session info
    */
   getSystemStatus(): {
     isActive: boolean;
     pendingContexts: number;
     activeSessions: number;
+    sessionsAwaitingPrompt: number;
     autoSaveConfig: AutoSaveConfig;
+    sessionEndPromptsEnabled: boolean;
   } {
     return {
       isActive: this.autoSaveService.getPendingCount() >= 0, // Service is initialized
       pendingContexts: this.autoSaveService.getPendingCount(),
       activeSessions: this.activeSessions.size,
+      sessionsAwaitingPrompt: this.autoSaveService.getSessionsAwaitingPrompt().length,
       autoSaveConfig: this.autoSaveService['config'], // Access private config
+      sessionEndPromptsEnabled: this.config.enableSessionEndPrompts,
     };
   }
 
@@ -318,6 +433,22 @@ export class ContextManagerService extends EventEmitter {
 
     this.autoSaveService.on('autoSaveCycleCompleted', ({ processedCount, remainingCount }) => {
       this.emit('autoSaveCycleCompleted', { processedCount, remainingCount });
+    });
+
+    this.autoSaveService.on('savePromptRequired', ({ sessionId, contextTitle, contextType, lastModified }) => {
+      this.emit('savePromptRequired', { sessionId, contextTitle, contextType, lastModified });
+    });
+
+    this.autoSaveService.on('promptResponse', ({ sessionId, shouldSave }) => {
+      this.emit('promptResponse', { sessionId, shouldSave });
+    });
+
+    this.autoSaveService.on('promptTimeout', ({ sessionIds }) => {
+      this.emit('promptTimeout', { sessionIds });
+    });
+
+    this.autoSaveService.on('contextDiscarded', ({ sessionId }) => {
+      this.emit('contextDiscarded', { sessionId });
     });
   }
 

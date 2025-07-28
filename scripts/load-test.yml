@@ -1,0 +1,268 @@
+# Artillery Load Testing Configuration for Persistent Context Store
+config:
+  target: 'http://localhost:3000'
+  phases:
+    # Warm-up phase
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm-up"
+    
+    # Gradual ramp-up
+    - duration: 120
+      arrivalRate: 10
+      rampTo: 50
+      name: "Ramp-up"
+    
+    # Peak load
+    - duration: 300
+      arrivalRate: 50
+      name: "Peak load"
+    
+    # Spike test
+    - duration: 60
+      arrivalRate: 100
+      name: "Spike test"
+    
+    # Cool-down
+    - duration: 60
+      arrivalRate: 10
+      name: "Cool-down"
+  
+  # Global configuration
+  timeout: 30
+  
+  # Variables for test data
+  variables:
+    sessionId:
+      - "session_load_test_1"
+      - "session_load_test_2"
+      - "session_load_test_3"
+      - "session_load_test_4"
+      - "session_load_test_5"
+    
+    memoryTypes:
+      - "fact"
+      - "preference"
+      - "context"
+      - "instruction"
+    
+    importance:
+      - "low"
+      - "medium"
+      - "high"
+      - "critical"
+  
+  # Default headers
+  defaults:
+    headers:
+      'Content-Type': 'application/json'
+      'Authorization': 'Bearer llm_load_test_key'
+
+# Performance thresholds
+expect:
+  - statusCode: 200
+  - contentType: json
+  - hasProperty: success
+  - responseTime: 500  # 95% of responses should be under 500ms
+
+scenarios:
+  # Health check scenario (10% of traffic)
+  - name: "Health Check"
+    weight: 10
+    flow:
+      - get:
+          url: "/health"
+          expect:
+            - statusCode: 200
+            - responseTime: 50
+
+  # Context CRUD operations (40% of traffic)
+  - name: "Context Operations"
+    weight: 40
+    flow:
+      # Create context
+      - post:
+          url: "/api/v1/contexts"
+          json:
+            title: "Load Test Context {{ $randomString() }}"
+            content: "This is a load test context with random content {{ $randomString() }}"
+            type: "memory"
+            tags: ["load-test", "performance"]
+            sessionId: "{{ sessionId }}"
+            metadata:
+              importance: "{{ importance }}"
+              source: "load-test"
+          capture:
+            - json: "$.data.id"
+              as: "contextId"
+          expect:
+            - statusCode: 201
+            - responseTime: 200
+      
+      # Get created context
+      - get:
+          url: "/api/v1/contexts/{{ contextId }}"
+          expect:
+            - statusCode: 200
+            - responseTime: 100
+      
+      # Update context (30% chance)
+      - think: 1
+      - function: "maybeUpdateContext"
+      
+      # Search contexts
+      - get:
+          url: "/api/v1/contexts"
+          qs:
+            q: "load test"
+            limit: 10
+          expect:
+            - statusCode: 200
+            - responseTime: 200
+
+  # LLM Memory operations (35% of traffic)
+  - name: "LLM Memory Operations"
+    weight: 35
+    flow:
+      # Store memories
+      - post:
+          url: "/api/v1/llm/memories"
+          json:
+            sessionId: "{{ sessionId }}"
+            memories:
+              shortTerm:
+                - type: "{{ memoryTypes }}"
+                  content: "Load test memory content {{ $randomString() }}"
+                  importance: "{{ importance }}"
+                  tags: ["load-test", "memory"]
+                  timestamp: "{{ $iso8601() }}"
+                  source: "llm"
+                  confidence: 0.8
+              longTerm:
+                - type: "preference"
+                  content: "User preference for load testing {{ $randomString() }}"
+                  importance: "high"
+                  tags: ["preference", "load-test"]
+                  timestamp: "{{ $iso8601() }}"
+                  source: "user"
+                  confidence: 0.9
+          expect:
+            - statusCode: 200
+            - responseTime: 300
+      
+      # Retrieve memories
+      - get:
+          url: "/api/v1/llm/memories"
+          qs:
+            sessionId: "{{ sessionId }}"
+            types: "fact,preference"
+            limit: 20
+          expect:
+            - statusCode: 200
+            - responseTime: 200
+      
+      # Advanced memory search
+      - post:
+          url: "/api/v1/llm/memories/search"
+          json:
+            query: "load test"
+            filters:
+              types: ["fact", "preference"]
+              importance: ["medium", "high"]
+            limit: 10
+            fuzzyMatch: true
+          expect:
+            - statusCode: 200
+            - responseTime: 300
+
+  # Session management (10% of traffic)
+  - name: "Session Management"
+    weight: 10
+    flow:
+      # Create session
+      - post:
+          url: "/api/v1/llm/sessions"
+          json:
+            sessionId: "load_test_session_{{ $randomString() }}"
+            title: "Load Test Session"
+            settings:
+              memoryRetention: "session"
+              maxMemories: 100
+              autoSummary: false
+          capture:
+            - json: "$.session.sessionId"
+              as: "testSessionId"
+          expect:
+            - statusCode: 200
+            - responseTime: 200
+      
+      # Get session info
+      - get:
+          url: "/api/v1/llm/sessions/{{ testSessionId }}"
+          expect:
+            - statusCode: 200
+            - responseTime: 100
+      
+      # Update session context
+      - post:
+          url: "/api/v1/llm/sessions/{{ testSessionId }}/context"
+          json:
+            currentTask: "Load testing"
+            keyTopics: ["performance", "testing"]
+            workingMemory:
+              - content: "Running load test"
+                importance: 0.7
+                timestamp: "{{ $iso8601() }}"
+          expect:
+            - statusCode: 200
+            - responseTime: 150
+
+  # Performance monitoring (5% of traffic)
+  - name: "Performance Monitoring"
+    weight: 5
+    flow:
+      # Health detailed
+      - get:
+          url: "/health/detailed"
+          expect:
+            - statusCode: 200
+            - responseTime: 100
+      
+      # Performance metrics
+      - get:
+          url: "/api/v1/performance/metrics"
+          expect:
+            - statusCode: 200
+            - responseTime: 150
+
+# Custom functions for conditional logic
+functions:
+  maybeUpdateContext: |
+    function(context, ee, next) {
+      if (Math.random() < 0.3) {
+        // 30% chance to update context
+        context.vars.shouldUpdate = true;
+      } else {
+        context.vars.shouldUpdate = false;
+      }
+      return next();
+    }
+
+# Post-processing hooks
+after:
+  flow:
+    # Clean up test data
+    - function: "cleanupTestData"
+
+# Custom metrics and reporting
+plugins:
+  expect: {}
+  metrics-by-endpoint:
+    useOnlyRequestNames: true
+  
+# Report configuration  
+reporting:
+  json:
+    output: "load-test-results.json"
+  html:
+    output: "load-test-report.html"

@@ -5,9 +5,7 @@
 
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { Content, Theme } from '@carbon/react';
-import { Header } from './components/Header/Header';
-import { Sidebar } from './components/Sidebar/Sidebar';
+import { MainLayout } from './components/Layout/MainLayout';
 import { HomePage } from './pages/HomePage';
 import { ContextsPage } from './pages/ContextsPage';
 import { TemplatesPage } from './pages/TemplatesPage';
@@ -16,23 +14,15 @@ import { AnalyticsPage } from './pages/AnalyticsPage';
 
 function App() {
   return (
-    <Theme theme="white">
-      <div className="app">
-        <Header />
-        <div className="app-content">
-          <Sidebar />
-          <Content className="main-content">
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/contexts" element={<ContextsPage />} />
-              <Route path="/templates" element={<TemplatesPage />} />
-              <Route path="/graph" element={<GraphPage />} />
-              <Route path="/analytics" element={<AnalyticsPage />} />
-            </Routes>
-          </Content>
-        </div>
-      </div>
-    </Theme>
+    <MainLayout>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/contexts/*" element={<ContextsPage />} />
+        <Route path="/templates" element={<TemplatesPage />} />
+        <Route path="/graph" element={<GraphPage />} />
+        <Route path="/analytics" element={<AnalyticsPage />} />
+      </Routes>
+    </MainLayout>
   );
 }
 

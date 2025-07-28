@@ -1,0 +1,263 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: context-store-app
+  namespace: context-store
+  labels:
+    app: persistent-context-store
+    component: app
+    version: "${IMAGE_TAG:-latest}"
+spec:
+  replicas: ${REPLICAS:-3}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: persistent-context-store
+      component: app
+  template:
+    metadata:
+      labels:
+        app: persistent-context-store
+        component: app
+        version: "${IMAGE_TAG:-latest}"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "3000"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      containers:
+      - name: context-store
+        image: ghcr.io/your-org/persistent-context-store:${IMAGE_TAG:-latest}
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        env:
+        # Configuration from ConfigMap
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: context-store-config
+              key: NODE_ENV
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: context-store-config
+              key: PORT
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: context-store-config
+              key: LOG_LEVEL
+        - name: NEO4J_URI
+          valueFrom:
+            configMapKeyRef:
+              name: context-store-config
+              key: NEO4J_URI
+        - name: NEO4J_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: context-store-config
+              key: NEO4J_DATABASE
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: context-store-config
+              key: REDIS_URL
+        
+        # Secrets
+        - name: NEO4J_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: context-store-secrets
+              key: NEO4J_USERNAME
+        - name: NEO4J_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: context-store-secrets
+              key: NEO4J_PASSWORD
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: context-store-secrets
+              key: JWT_SECRET
+        - name: CLAUDE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: context-store-secrets
+              key: CLAUDE_API_KEY
+        - name: LLM_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: context-store-secrets
+              key: LLM_API_KEY
+        
+        # Resource limits
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+          successThreshold: 1
+        
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
+          successThreshold: 1
+        
+        # Volume mounts
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+        - name: backups
+          mountPath: /var/backups
+        - name: tmp
+          mountPath: /tmp
+        
+        # Security context
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+      
+      volumes:
+      - name: logs
+        emptyDir:
+          sizeLimit: 1Gi
+      - name: backups
+        persistentVolumeClaim:
+          claimName: backup-pvc
+      - name: tmp
+        emptyDir:
+          sizeLimit: 500Mi
+      
+      # Node selection and affinity
+      nodeSelector:
+        kubernetes.io/os: linux
+      
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - persistent-context-store
+              topologyKey: kubernetes.io/hostname
+      
+      # Tolerations for scheduling
+      tolerations:
+      - key: "app"
+        operator: "Equal"
+        value: "context-store"
+        effect: "NoSchedule"
+      
+      # Service account
+      serviceAccountName: context-store-sa
+      
+      # DNS configuration
+      dnsConfig:
+        options:
+        - name: ndots
+          value: "1"
+      
+      # Termination grace period
+      terminationGracePeriodSeconds: 30
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backup-pvc
+  namespace: context-store
+  labels:
+    app: persistent-context-store
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: fast-ssd
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: context-store-sa
+  namespace: context-store
+  labels:
+    app: persistent-context-store
+automountServiceAccountToken: true
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: context-store
+  name: context-store-role
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "endpoints"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets"]
+  verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: context-store-rolebinding
+  namespace: context-store
+subjects:
+- kind: ServiceAccount
+  name: context-store-sa
+  namespace: context-store
+roleRef:
+  kind: Role
+  name: context-store-role
+  apiGroup: rbac.authorization.k8s.io

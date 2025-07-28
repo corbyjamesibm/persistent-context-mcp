@@ -1,0 +1,89 @@
+{
+  "aiIntegration": {
+    "enabled": true,
+    "providers": {
+      "openai": {
+        "enabled": true,
+        "apiKey": "${OPENAI_API_KEY}",
+        "model": "gpt-4",
+        "maxTokens": 2048,
+        "temperature": 0.7,
+        "requestsPerMinute": 60,
+        "dailyTokenLimit": 100000
+      },
+      "anthropic": {
+        "enabled": true,
+        "apiKey": "${ANTHROPIC_API_KEY}",
+        "model": "claude-3-sonnet-20240229",
+        "maxTokens": 2048,
+        "temperature": 0.7,
+        "requestsPerMinute": 60,
+        "dailyTokenLimit": 100000
+      }
+    },
+    "features": {
+      "contentGeneration": {
+        "enabled": true,
+        "defaultProvider": "openai",
+        "maxPromptLength": 10000,
+        "rateLimiting": {
+          "requestsPerMinute": 30,
+          "requestsPerHour": 500
+        }
+      },
+      "contextAnalysis": {
+        "enabled": true,
+        "defaultProvider": "anthropic",
+        "maxContextsPerRequest": 10,
+        "analysisTypes": [
+          "summary",
+          "insights", 
+          "patterns",
+          "sentiment",
+          "classification"
+        ]
+      },
+      "contextEnhancement": {
+        "enabled": true,
+        "defaultProvider": "openai",
+        "autoEnhance": false,
+        "batchSize": 5
+      },
+      "suggestions": {
+        "enabled": true,
+        "defaultProvider": "anthropic",
+        "maxSuggestions": 5,
+        "cacheResults": true,
+        "cacheDurationMinutes": 30
+      }
+    },
+    "security": {
+      "logRequests": true,
+      "logResponses": false,
+      "maskApiKeys": true,
+      "requireAuthentication": true,
+      "allowedUsers": [],
+      "ipWhitelist": []
+    },
+    "monitoring": {
+      "trackUsage": true,
+      "alertOnHighUsage": true,
+      "usageThresholds": {
+        "dailyRequests": 1000,
+        "dailyTokens": 50000,
+        "hourlyRequests": 100
+      },
+      "webhooks": {
+        "usageAlert": "${AI_USAGE_WEBHOOK_URL}",
+        "errorAlert": "${AI_ERROR_WEBHOOK_URL}"
+      }
+    },
+    "caching": {
+      "enabled": true,
+      "provider": "redis",
+      "ttlSeconds": 3600,
+      "keyPrefix": "ai_cache:",
+      "maxCacheSize": "100MB"
+    }
+  }
+}

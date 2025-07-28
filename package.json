@@ -5,8 +5,11 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "vite",
+    "dev:api": "tsx watch src/index.ts",
     "build": "tsc && vite build",
+    "build:api": "tsc",
+    "build:ui": "vite build",
     "start": "node dist/index.js",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -14,9 +17,10 @@
     "lint": "eslint src/**/*.{ts,tsx}",
     "lint:fix": "eslint src/**/*.{ts,tsx} --fix",
     "typecheck": "tsc --noEmit",
-    "dev:ui": "vite",
-    "build:ui": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "setup:podman": "./scripts/podman-setup.sh",
+    "setup:local": "./scripts/dev-local.sh",
+    "cleanup:podman": "./scripts/podman-cleanup.sh"
   },
   "keywords": [
     "context-management",

@@ -57,7 +57,7 @@ persistent-context-store/
 ### Development
 - **ESLint** for code linting
 - **Jest** for testing
-- **Docker** for containerization
+- **Podman** for containerization
 
 ## 🚀 Getting Started
 
@@ -67,6 +67,7 @@ persistent-context-store/
 - npm >= 9.0.0
 - Neo4j >= 5.0.0
 - Elasticsearch >= 8.0.0 (optional, for advanced search)
+- Podman (for containerized setup)
 
 ### Installation
 
@@ -87,19 +88,33 @@ persistent-context-store/
    # Edit .env with your Neo4j and other configuration
    ```
 
-4. **Start Neo4j database**
+4. **Choose your setup method**
+
+   **Option A: Using Podman (Recommended)**
    ```bash
-   # Using Docker
-   docker run -p 7474:7474 -p 7687:7687 -e NEO4J_AUTH=neo4j/password neo4j:5.15
+   # Automated setup with Podman
+   ./scripts/podman-setup.sh
+   ```
+
+   **Option B: Local Development**
+   ```bash
+   # Start local services (requires Neo4j installed locally)
+   ./scripts/dev-local.sh
+   ```
+
+   **Option C: Manual Neo4j Setup**
+   ```bash
+   # Using Podman
+   podman run -p 7474:7474 -p 7687:7687 -e NEO4J_AUTH=neo4j/contextstore123 neo4j:5.15
    ```
 
 5. **Run the development servers**
    ```bash
    # Start the API server
-   npm run dev
+   npm start
 
    # In another terminal, start the UI development server
-   npm run dev:ui
+   npm run dev
    ```
 
 6. **Access the application**
@@ -185,14 +200,39 @@ npm run build
 npm start
 ```
 
-## 🐳 Docker Deployment
+## 📦 Podman Deployment
+
+### Using Podman Compose
 
 ```bash
-# Build Docker image
-docker build -t persistent-context-store .
+# Start all services
+./scripts/podman-setup.sh
 
-# Run with docker-compose
-docker-compose up -d
+# Or manually
+podman-compose -f podman-compose.yml up -d
+
+# Stop all services
+podman-compose -f podman-compose.yml down
+
+# Clean up everything
+./scripts/podman-cleanup.sh
+```
+
+### Manual Podman Commands
+
+```bash
+# Start Neo4j
+podman run -d --name neo4j \
+  -p 7474:7474 -p 7687:7687 \
+  -e NEO4J_AUTH=neo4j/contextstore123 \
+  neo4j:5.15-community
+
+# Start Elasticsearch (optional)
+podman run -d --name elasticsearch \
+  -p 9200:9200 \
+  -e discovery.type=single-node \
+  -e xpack.security.enabled=false \
+  docker.elastic.co/elasticsearch/elasticsearch:8.11.0
 ```
 
 ## 🤝 Contributing

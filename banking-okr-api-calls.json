@@ -1,0 +1,212 @@
+{
+  "timestamp": "2025-08-01T10:30:00Z",
+  "category": "OKR_IMPLEMENTATION",
+  "description": "Banking OKR API calls and hierarchical structure for Q1 2025",
+  
+  "okr_hierarchy": {
+    "executive_level": {
+      "coo_objective": {
+        "id": 4730,
+        "name": "Digital Banking Transformation",
+        "description": "Accelerate digital banking adoption to become the primary channel for customer interactions",
+        "entity_type": "Objective",
+        "project_id": 2909,
+        "key_results": [
+          {
+            "id": 4738,
+            "name": "Digital Transaction Volume Target: 65%",
+            "start_value": 45,
+            "target_value": 65
+          },
+          {
+            "id": 4735,
+            "name": "Achieve 4.5-star mobile app rating",
+            "start_value": 3.8,
+            "target_value": 4.5
+          },
+          {
+            "id": 4736,
+            "name": "Reduce digital onboarding time to 7 minutes",
+            "start_value": 15,
+            "target_value": 7
+          },
+          {
+            "id": 4737,
+            "name": "Launch 3 AI-powered features",
+            "start_value": 0,
+            "target_value": 3
+          }
+        ]
+      }
+    },
+    
+    "department_level": {
+      "svp_data": {
+        "objective": {
+          "id": 4739,
+          "name": "Data & Analytics Excellence for Digital Banking",
+          "description": "Build advanced data capabilities and AI-powered insights to enable personalized digital banking experiences and real-time decision making",
+          "parent_objective_id": 4730,
+          "entity_type": "Objective"
+        },
+        "key_results": [
+          {
+            "id": 4742,
+            "name": "Build real-time customer analytics platform",
+            "description": "Deploy real-time analytics platform processing 100% of digital transactions within 50ms",
+            "start_value": 0,
+            "target_value": 100
+          },
+          {
+            "id": 4743,
+            "name": "Deploy AI fraud detection with 95% accuracy",
+            "description": "Implement ML-based fraud detection achieving 95% accuracy with <0.1% false positive rate",
+            "start_value": 75,
+            "target_value": 95
+          },
+          {
+            "id": 4744,
+            "name": "Enable personalized insights for 80% customers",
+            "description": "Launch AI-driven personalized financial insights reaching 80% of active digital banking users",
+            "start_value": 0,
+            "target_value": 80
+          }
+        ]
+      },
+      
+      "svp_engineering": {
+        "objective": {
+          "id": 4740,
+          "name": "Digital Product Engineering Excellence",
+          "description": "Deliver exceptional digital banking applications with world-class user experience, seamless omnichannel integration, and rapid feature delivery",
+          "parent_objective_id": 4730,
+          "entity_type": "Objective"
+        },
+        "key_results": [
+          {
+            "id": 4745,
+            "name": "Launch redesigned mobile app with 4.5+ rating",
+            "description": "Deliver new mobile banking app with enhanced UX achieving 4.5+ star rating on app stores",
+            "start_value": 3.8,
+            "target_value": 4.5
+          },
+          {
+            "id": 4746,
+            "name": "Streamline digital onboarding to 7 minutes",
+            "description": "Redesign and implement frictionless onboarding flow reducing time from 15 to 7 minutes",
+            "start_value": 15,
+            "target_value": 7
+          }
+        ]
+      },
+      
+      "svp_infrastructure": {
+        "objective": {
+          "id": 4741,
+          "name": "Infrastructure Modernization for Digital Scale",
+          "description": "Build cloud-native infrastructure that ensures 99.99% uptime, sub-second response times, and bank-grade security for digital banking services",
+          "parent_objective_id": 4730,
+          "entity_type": "Objective"
+        },
+        "key_results": [
+          {
+            "id": 4747,
+            "name": "Achieve 99.99% platform uptime",
+            "description": "Maintain 99.99% uptime for all digital banking services through resilient cloud infrastructure",
+            "start_value": 99.5,
+            "target_value": 99.99
+          },
+          {
+            "id": 4748,
+            "name": "Reduce API response time to <200ms",
+            "description": "Optimize infrastructure to achieve sub-200ms response time for 95% of API calls",
+            "start_value": 450,
+            "target_value": 200
+          }
+        ]
+      }
+    }
+  },
+  
+  "api_calls": {
+    "create_objective": {
+      "method": "POST",
+      "endpoint": "/api/v1/Objectives",
+      "example_payload": {
+        "type": "Objective",
+        "name": "Digital Banking Transformation",
+        "description": "Accelerate digital banking adoption to become the primary channel for customer interactions",
+        "project": {"id": 2909}
+      },
+      "notes": "For child objectives, include 'Objective': {'Id': parent_id} in additionalFields"
+    },
+    
+    "create_key_result": {
+      "method": "POST",
+      "endpoint": "/api/v1/KeyResults",
+      "example_payload": {
+        "type": "KeyResult",
+        "name": "Increase digital transaction volume from 45% to 65%",
+        "description": "Increase digital transaction volume from 45% to 65% of total transactions",
+        "project": {"id": 2909},
+        "additionalFields": {
+          "Objective": {"Id": 4730},
+          "Start Value": 45,
+          "Target Value": 65
+        }
+      },
+      "custom_fields": [
+        "Start Value",
+        "Target Value",
+        "Current Value (system-managed)",
+        "Weightage",
+        "Result Type"
+      ]
+    },
+    
+    "update_key_result": {
+      "method": "POST",
+      "endpoint": "/api/v1/KeyResults/{id}",
+      "limitations": "Current Value is a system field that can only be updated by System User or through metrics integrations"
+    }
+  },
+  
+  "implementation_notes": {
+    "entity_types_used": [
+      "Objective - For OKR objectives at all levels",
+      "KeyResult - For measurable key results with Start/Target values"
+    ],
+    "hierarchy_approach": "Parent-child relationships using Objective.Objective field",
+    "custom_fields_discovered": {
+      "Objective": ["Portfolio Objective (checkbox)"],
+      "KeyResult": ["Start Value", "Target Value", "Current Value", "Weightage", "Result Type"]
+    },
+    "lessons_learned": [
+      "PortfolioEpic was initially used but Objective/KeyResult entities are the proper types",
+      "Custom fields must be set in additionalFields during creation",
+      "Current Value is system-managed and cannot be updated via API",
+      "Parent objectives are linked via Objective field in additionalFields"
+    ]
+  },
+  
+  "rollup_structure": {
+    "coo_level": {
+      "digital_transaction_volume": {
+        "contributes_from": ["svp_data.analytics_platform", "svp_engineering.mobile_app"],
+        "rollup_logic": "Weighted average based on channel contribution"
+      },
+      "mobile_app_rating": {
+        "contributes_from": ["svp_engineering.mobile_app_rating"],
+        "rollup_logic": "Direct mapping"
+      },
+      "onboarding_time": {
+        "contributes_from": ["svp_engineering.onboarding_streamline"],
+        "rollup_logic": "Direct mapping"
+      },
+      "ai_features": {
+        "contributes_from": ["svp_data.fraud_detection", "svp_data.personalized_insights"],
+        "rollup_logic": "Count of launched features"
+      }
+    }
+  }
+}

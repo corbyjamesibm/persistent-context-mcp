@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resource Allocation Report</title>
+    <style>
+        :root {
+            --primary: #0062ff;
+            --secondary: #6c757d;
+            --success: #00a78e;
+            --warning: #f1c21b;
+            --danger: #e90649;
+            --light: #f4f4f4;
+            --dark: #161616;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, system-ui, sans-serif;
+            background: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary), #0043ce);
+            color: white;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        .subtitle { opacity: 0.9; font-size: 1.1rem; }
+        
+        .stats {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            padding: 1rem;
+            border-radius: 4px;
+            min-width: 150px;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .info-card {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .info-card h2 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .resource-card {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .resource-card.unallocated {
+            border-left-color: var(--warning);
+            background: #fff3cd;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 0.5rem;
+        }
+        
+        .btn:hover {
+            background: #0043ce;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--secondary);
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 2rem;
+        }
+        
+        .tab {
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            color: var(--secondary);
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎯 Resource Allocation Report</h1>
+        <div class="subtitle">TargetProcess Resource Management Dashboard</div>
+        <div class="stats" id="stats">
+            <div class="stat-card">
+                <div class="stat-value">--</div>
+                <div>Total Resources</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">--</div>
+                <div>Allocated</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">--</div>
+                <div>Unallocated</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">--</div>
+                <div>Active Projects</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('overview')">Overview</button>
+            <button class="tab" onclick="showTab('allocations')">Current Allocations</button>
+            <button class="tab" onclick="showTab('unallocated')">Unallocated Resources</button>
+            <button class="tab" onclick="showTab('actions')">Quick Actions</button>
+        </div>
+        
+        <div id="overview" class="tab-content active">
+            <div class="info-card">
+                <h2>📊 Allocation Overview</h2>
+                <p>This report provides a comprehensive view of resource allocations across all projects in TargetProcess.</p>
+                <div id="overview-content" class="loading">
+                    Loading allocation data...
+                </div>
+            </div>
+        </div>
+        
+        <div id="allocations" class="tab-content">
+            <div class="info-card">
+                <h2>📅 Current Work Allocations</h2>
+                <p>Resources currently allocated to projects with start and end dates.</p>
+                <div id="allocations-content" class="loading">
+                    Loading allocation details...
+                </div>
+            </div>
+        </div>
+        
+        <div id="unallocated" class="tab-content">
+            <div class="info-card">
+                <h2>⚠️ Unallocated Resources</h2>
+                <p>Resources without current work allocations who are available for assignment.</p>
+                <div id="unallocated-content" class="loading">
+                    Loading unallocated resources...
+                </div>
+            </div>
+        </div>
+        
+        <div id="actions" class="tab-content">
+            <div class="info-card">
+                <h2>⚡ Quick Actions</h2>
+                <p>Common resource management tasks and reports.</p>
+                <div class="grid">
+                    <div class="resource-card">
+                        <h3>Export Data</h3>
+                        <p>Download allocation data as CSV</p>
+                        <button class="btn" onclick="exportData()">Export CSV</button>
+                    </div>
+                    <div class="resource-card">
+                        <h3>Refresh Data</h3>
+                        <p>Fetch latest allocation information</p>
+                        <button class="btn" onclick="location.reload()">Refresh</button>
+                    </div>
+                    <div class="resource-card">
+                        <h3>Open TargetProcess</h3>
+                        <p>Go to TargetProcess instance</p>
+                        <a href="https://usibmsandbox.tpondemand.com" target="_blank" class="btn">Open TP</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Tab switching
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        // Load data from JSON files
+        async function loadData() {
+            try {
+                // For this static version, we'll use placeholder data
+                // In production, this would load the actual JSON files
+                
+                const summaryData = {
+                    total_users: 1000,
+                    allocated_count: 64,
+                    unallocated_count: 935,
+                    total_projects: 50,
+                    total_allocations: 1000
+                };
+                
+                // Update stats
+                const stats = document.querySelectorAll('.stat-value');
+                stats[0].textContent = summaryData.total_users;
+                stats[1].textContent = summaryData.allocated_count;
+                stats[2].textContent = summaryData.unallocated_count;
+                stats[3].textContent = summaryData.total_projects;
+                
+                // Update overview
+                document.getElementById('overview-content').innerHTML = `
+                    <div class="grid">
+                        <div class="resource-card">
+                            <h3>Allocation Rate</h3>
+                            <p style="font-size: 2rem; color: var(--warning);">
+                                ${Math.round(summaryData.allocated_count / summaryData.total_users * 100)}%
+                            </p>
+                            <p>of resources are allocated</p>
+                        </div>
+                        <div class="resource-card">
+                            <h3>Available Resources</h3>
+                            <p style="font-size: 2rem; color: var(--success);">
+                                ${summaryData.unallocated_count}
+                            </p>
+                            <p>resources available for allocation</p>
+                        </div>
+                        <div class="resource-card">
+                            <h3>Active Allocations</h3>
+                            <p style="font-size: 2rem; color: var(--primary);">
+                                ${summaryData.total_allocations}
+                            </p>
+                            <p>work allocations in system</p>
+                        </div>
+                    </div>
+                    <div style="margin-top: 2rem;">
+                        <h3>Key Insights</h3>
+                        <ul style="margin-top: 1rem; padding-left: 1.5rem;">
+                            <li>High number of unallocated resources (${summaryData.unallocated_count}) indicates available capacity</li>
+                            <li>Current allocation rate suggests opportunity for resource optimization</li>
+                            <li>Consider reviewing project demands and resource skills matching</li>
+                        </ul>
+                    </div>
+                `;
+                
+                // Update allocations tab
+                document.getElementById('allocations-content').innerHTML = `
+                    <p style="color: var(--secondary);">
+                        Detailed allocation data with ${summaryData.total_allocations} records is available.
+                        Use the TargetProcess interface for detailed viewing and editing.
+                    </p>
+                    <a href="https://usibmsandbox.tpondemand.com/RestUI/board.aspx?#page=workallocation" 
+                       target="_blank" class="btn" style="margin-top: 1rem;">
+                        View in TargetProcess →
+                    </a>
+                `;
+                
+                // Update unallocated tab
+                document.getElementById('unallocated-content').innerHTML = `
+                    <p style="color: var(--danger); font-weight: bold;">
+                        ${summaryData.unallocated_count} resources without current allocations
+                    </p>
+                    <p style="margin-top: 1rem;">
+                        These resources are available for immediate assignment to projects.
+                    </p>
+                    <a href="https://usibmsandbox.tpondemand.com/RestUI/board.aspx?#page=user" 
+                       target="_blank" class="btn" style="margin-top: 1rem;">
+                        Manage Resources →
+                    </a>
+                `;
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+        
+        function exportData() {
+            alert('Export functionality would download CSV with all allocation data.\nIn production, this would generate a downloadable file.');
+        }
+        
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', loadData);
+    </script>
+</body>
+</html>

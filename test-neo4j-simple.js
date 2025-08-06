@@ -9,7 +9,7 @@ async function testConnection() {
   
   const driver = neo4j.driver(
     'bolt://localhost:7687',
-    neo4j.auth.basic('neo4j', 'persistentcontext123')
+    neo4j.auth.basic('neo4j', 'neo4j123')
   );
 
   try {

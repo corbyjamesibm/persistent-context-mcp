@@ -1,0 +1,170 @@
+{
+  "workAllocationEntityGuide": {
+    "description": "Guide for working with WorkAllocation entities in TargetProcess",
+    "lastUpdated": "2025-07-29",
+    "entityStructure": {
+      "type": "Custom Assignable Entity",
+      "keyFields": {
+        "ConnectedTeam": {
+          "description": "Reference to the Team being allocated",
+          "type": "Team",
+          "note": "Use ConnectedTeam instead of deprecated Team field"
+        },
+        "ConnectedUser": {
+          "description": "Reference to the User being allocated (for user-level allocations)",
+          "type": "User",
+          "optional": true
+        },
+        "CustomFields.Percentage": {
+          "description": "Allocation percentage",
+          "type": "Money",
+          "note": "Stored in CustomFields array, not as direct field"
+        },
+        "CustomFields.Status": {
+          "description": "Allocation status",
+          "type": "DropDown",
+          "values": ["Requested", "Approved", "Rejected"]
+        },
+        "CustomFields.AllocationType": {
+          "description": "Type of allocation",
+          "type": "DropDown",
+          "values": ["Team", "User"]
+        },
+        "CustomFields.WorkingDays": {
+          "description": "Number of working days in allocation period",
+          "type": "Number"
+        },
+        "StartDate": {
+          "description": "Start date of allocation period",
+          "type": "DateTime"
+        },
+        "EndDate": {
+          "description": "End date of allocation period",
+          "type": "DateTime"
+        },
+        "Project": {
+          "description": "Project/Portfolio the allocation is for",
+          "type": "Project",
+          "optional": true
+        },
+        "Epic": {
+          "description": "Epic the allocation is for",
+          "type": "Epic",
+          "optional": true
+        },
+        "PortfolioEpic": {
+          "description": "Portfolio Epic (Initiative) the allocation is for",
+          "type": "PortfolioEpic",
+          "optional": true
+        }
+      }
+    },
+    "apiExamples": {
+      "queryTeamAllocations": {
+        "description": "Get all allocations for a specific team",
+        "method": "GET",
+        "endpoint": "/api/v1/WorkAllocations",
+        "parameters": {
+          "where": "ConnectedTeam.Id eq {teamId}",
+          "include": "[ConnectedTeam,Project,Epic,PortfolioEpic,CustomFields]",
+          "format": "json"
+        }
+      },
+      "queryPortfolioAllocations": {
+        "description": "Get all allocations for teams in a portfolio",
+        "method": "GET",
+        "endpoint": "/api/v1/WorkAllocations",
+        "parameters": {
+          "where": "Project.Id eq {portfolioId}",
+          "include": "[ConnectedTeam,CustomFields]",
+          "format": "json"
+        }
+      },
+      "createTeamAllocation": {
+        "description": "Create a new team work allocation",
+        "method": "POST",
+        "endpoint": "/api/v1/WorkAllocations",
+        "body": {
+          "ConnectedTeam": {"Id": "{teamId}"},
+          "Project": {"Id": "{projectId}"},
+          "PortfolioEpic": {"Id": "{portfolioEpicId}"},
+          "StartDate": "YYYY-MM-DD",
+          "EndDate": "YYYY-MM-DD",
+          "CustomFields": [
+            {"Name": "Percentage", "Value": 80},
+            {"Name": "Allocation Type", "Value": "Team"},
+            {"Name": "Status", "Value": "Requested"},
+            {"Name": "Working Days", "Value": 60}
+          ]
+        }
+      },
+      "updateAllocationStatus": {
+        "description": "Update allocation status (e.g., approve)",
+        "method": "POST",
+        "endpoint": "/api/v1/WorkAllocations/{allocationId}",
+        "body": {
+          "CustomFields": [
+            {"Name": "Status", "Value": "Approved"}
+          ]
+        }
+      }
+    },
+    "validationRules": {
+      "overallocation": {
+        "description": "Team allocations exceeding 100% for same time period",
+        "detection": "Sum CustomFields.Percentage for overlapping date ranges",
+        "threshold": 100
+      },
+      "underutilization": {
+        "description": "Teams with low allocation percentage",
+        "detection": "Total allocation < 50%",
+        "recommendation": "Consider additional work assignments"
+      },
+      "duplicateAllocations": {
+        "description": "Multiple allocations to same initiative",
+        "detection": "Same team allocated multiple times to same PortfolioEpic",
+        "action": "Consolidate into single allocation"
+      },
+      "missingApproval": {
+        "description": "Allocations pending approval",
+        "detection": "CustomFields.Status = 'Requested'",
+        "action": "Review and approve valid allocations"
+      }
+    },
+    "bestPractices": [
+      "Ensure teams don't exceed 100% allocation across all assignments",
+      "Leave 10-20% capacity for unplanned work and innovation",
+      "Allocate at multiple levels: Initiative (strategic), Epic (tactical), Feature (execution)",
+      "Review and approve allocations before PI planning",
+      "Monitor actual vs allocated capacity during PI execution",
+      "Update allocations when team composition changes"
+    ],
+    "commonIssues": [
+      {
+        "issue": "No allocations found",
+        "causes": ["Using Team field instead of ConnectedTeam", "Missing CustomFields in query"],
+        "solution": "Use ConnectedTeam.Id in where clause and include CustomFields"
+      },
+      {
+        "issue": "Percentage not visible",
+        "causes": ["CustomFields not included in query", "Percentage stored as Money type"],
+        "solution": "Include CustomFields in query and parse Money type value"
+      },
+      {
+        "issue": "Overallocation not detected",
+        "causes": ["Multiple allocations across different time periods", "Duplicate entries"],
+        "solution": "Sum all allocations for overlapping date ranges per team"
+      }
+    ],
+    "visualization": {
+      "description": "D3.js Sankey diagram can be used to visualize work allocations",
+      "reference": "See work-allocation-visualization-context.json for implementation details",
+      "benefits": [
+        "Visual representation of team-to-initiative flows",
+        "Immediate identification of overallocation issues",
+        "Proportional display of resource distribution",
+        "Interactive tooltips for detailed information"
+      ]
+    }
+  }
+}

@@ -1,0 +1,143 @@
+{
+  "contextId": "ctx_work_allocation_analysis_2025_07_30",
+  "title": "Portfolio A Work Allocation Analysis with Sankey Visualization",
+  "createdAt": "2025-07-30",
+  "type": "analysis",
+  "tags": ["work-allocation", "portfolio-a", "visualization", "sankey-diagram", "capacity-planning"],
+  
+  "content": {
+    "summary": "Comprehensive analysis of Portfolio A team work allocations with hours-based calculations and D3.js Sankey diagram visualization showing overallocation issues.",
+    
+    "keyFindings": {
+      "overallocatedTeams": [
+        {
+          "name": "Team Rho",
+          "totalAllocation": "240%",
+          "allocatedHours": 7488,
+          "capacity": 3120,
+          "initiatives": ["AI Access to Apptio Platform (3 allocations totaling 210%)", "Transformation (30%)"],
+          "severity": "Severe - 4,368 hours over capacity"
+        },
+        {
+          "name": "Team Beta",
+          "totalAllocation": "140%",
+          "allocatedHours": 2184,
+          "capacity": 1560,
+          "initiatives": ["Cloud Migration (60%)", "Migration to Workday (80%)"],
+          "severity": "High - 624 hours over capacity"
+        }
+      ],
+      
+      "underutilizedTeams": [
+        {
+          "name": "Digital Delivery",
+          "totalAllocation": "0%",
+          "allocatedHours": 0,
+          "capacity": 520,
+          "recommendation": "Available for new work assignments"
+        },
+        {
+          "name": "Team Gamma",
+          "totalAllocation": "10%",
+          "allocatedHours": 52,
+          "capacity": 520,
+          "recommendation": "468 hours available capacity"
+        },
+        {
+          "name": "Delta Team Updated",
+          "totalAllocation": "20%",
+          "allocatedHours": 104,
+          "capacity": 520,
+          "recommendation": "416 hours available capacity"
+        }
+      ],
+      
+      "initiativeAnalysis": {
+        "largestInitiative": {
+          "name": "AI Access to Apptio Platform",
+          "totalHours": 7436,
+          "teams": ["Team Rho (6,552 hrs)", "Team Epsilon (832 hrs)", "Team Gamma (52 hrs)"],
+          "issues": "Team Rho has 3 duplicate allocations totaling 210%"
+        },
+        "portfolioOwned": [
+          {
+            "name": "Cloud Migration",
+            "totalHours": 2704,
+            "status": "Funnel",
+            "teams": ["Team Alpha", "Team Beta", "Test Team"]
+          },
+          {
+            "name": "Migration to Workday",
+            "totalHours": 1352,
+            "status": "Funnel",
+            "teams": ["Team Beta", "team_name"]
+          }
+        ]
+      }
+    },
+    
+    "calculationMethodology": {
+      "assumptions": {
+        "quarterlyWorkingDays": 65,
+        "hoursPerDay": 8,
+        "daysPerWeek": 5,
+        "hoursPerQuarter": 520
+      },
+      "formula": "Allocated Hours = Team Size × Working Days × Hours/Day × (Allocation % / 100)",
+      "dateHandling": "When allocation dates are missing, inherit from initiative dates. Standard periods are quarterly.",
+      "importantNote": "When calculating totals, add hours not percentages"
+    },
+    
+    "visualizationImplementation": {
+      "technology": "D3.js v7 with d3-sankey plugin",
+      "features": {
+        "lineThickness": "Proportional to allocated hours",
+        "colorCoding": "Team Rho highlighted in pink (#ee5396) for overallocation",
+        "interactivity": "Hover tooltips showing team, initiative, hours, and percentage",
+        "layout": "Left-to-right flow from teams to initiatives"
+      },
+      "dataStructure": {
+        "nodes": "Array of team and initiative names with explicit indices",
+        "links": "Array with source/target indices and hour values",
+        "criticalNote": "Links must use node indices, not string names"
+      }
+    },
+    
+    "technicalDetails": {
+      "reportLocation": "/reports/portfolio_a_allocations_hours.html",
+      "dataSource": "TargetProcess WorkAllocation API",
+      "queryPattern": "ConnectedTeam.Id in [teamIds] with CustomFields",
+      "customFields": {
+        "Percentage": "Money type in CustomFields array",
+        "Status": "DropDown type (Requested/Approved)",
+        "WorkingDays": "Number type (often null)"
+      }
+    },
+    
+    "recommendations": [
+      "Reallocate Team Rho's duplicate AI Access allocations",
+      "Reduce Team Beta's commitments or add team members",
+      "Utilize Digital Delivery team's 520 hours capacity",
+      "Consider moving work from overallocated to underutilized teams",
+      "Set allocation dates to enable accurate cost calculations",
+      "Approve allocations currently in 'Requested' status"
+    ],
+    
+    "implementationCode": {
+      "sankeySetup": "const sankey = d3.sankey().nodeWidth(15).nodePadding(10).extent([[1, 1], [width - 1, height - 6]]);",
+      "nodeMapping": "const nodeMap = new Map(nodes.map((node, i) => [node.name, i]));",
+      "linkCreation": "links.map(l => ({source: nodeMap.get(l.source), target: nodeMap.get(l.target), value: l.hours}))"
+    }
+  },
+  
+  "metadata": {
+    "portfolioId": 3,
+    "portfolioName": "Portfolio A",
+    "totalTeams": 8,
+    "totalTeamMembers": 39,
+    "totalCapacityHours": 20280,
+    "totalAllocatedHours": 13884,
+    "utilizationPercentage": 68.5,
+    "reportGeneratedDate": "2025-07-30"
+  }
+}

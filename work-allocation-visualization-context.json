@@ -1,0 +1,129 @@
+{
+  "workAllocationVisualization": {
+    "description": "D3.js Sankey diagram implementation for visualizing team hour allocations to initiatives",
+    "dateCreated": "2025-01-30",
+    "purpose": "Visual representation of work allocations showing team capacity utilization and overallocation issues",
+    
+    "implementation": {
+      "libraries": {
+        "d3": "https://d3js.org/d3.v7.min.js",
+        "d3Sankey": "https://unpkg.com/d3-sankey@0.12.3/dist/d3-sankey.min.js"
+      },
+      
+      "dataStructure": {
+        "nodes": {
+          "description": "Array of all teams and initiatives",
+          "format": "[{name: 'Team Alpha (5)'}, {name: 'Cloud Migration'}, ...]",
+          "important": "Must use node indices for links, not string names"
+        },
+        "links": {
+          "description": "Connections between teams and initiatives with allocated hours",
+          "format": "{source: nodeIndex, target: nodeIndex, value: hours}",
+          "example": "{source: 0, target: 9, value: 1560}"
+        }
+      },
+      
+      "keyFeatures": {
+        "lineThickness": "Proportional to allocated hours",
+        "colorCoding": {
+          "default": "Black lines for normal allocations",
+          "overallocated": "Pink (#ee5396) for Team Rho to highlight 240% overallocation"
+        },
+        "interactivity": {
+          "hover": "Shows team name, initiative, hours, and calculated percentage",
+          "tooltipCalculation": "percentage = (hours / 520) * 100 / teamSize"
+        }
+      },
+      
+      "visualInsights": {
+        "overallocationHighlighting": "Teams with >100% allocation shown with colored flows",
+        "capacityVisualization": "Line thickness immediately shows resource distribution",
+        "splitAllocations": "Teams working on multiple initiatives have multiple outgoing flows"
+      }
+    },
+    
+    "calculationContext": {
+      "quarterlyAssumptions": {
+        "workingDays": 65,
+        "hoursPerDay": 8,
+        "hoursPerQuarter": 520,
+        "formula": "allocatedHours = teamSize * workingDays * hoursPerDay * (allocationPercentage / 100)"
+      },
+      
+      "keyFindings": {
+        "overallocatedTeams": [
+          {"name": "Team Rho", "allocation": "240%", "hours": 7488, "capacity": 3120},
+          {"name": "Team Beta", "allocation": "140%", "hours": 2184, "capacity": 1560}
+        ],
+        "underutilizedTeams": [
+          {"name": "Team Gamma", "allocation": "10%"},
+          {"name": "Delta Team Updated", "allocation": "20%"},
+          {"name": "Digital Delivery", "allocation": "0%"}
+        ],
+        "largestInitiative": {
+          "name": "AI Access to Apptio Platform",
+          "totalHours": 7436,
+          "note": "Includes 3 separate allocations from Team Rho totaling 6552 hours"
+        }
+      }
+    },
+    
+    "reportStructure": {
+      "location": "/reports/portfolio_a_allocations_hours.html",
+      "sections": [
+        "Executive Summary",
+        "Calculation Methodology",
+        "Sankey Diagram Visualization",
+        "Metrics Dashboard",
+        "Initiative Details with Hour Calculations",
+        "Team Capacity Analysis",
+        "Important Notes"
+      ],
+      
+      "sankeyIntegration": {
+        "placement": "Between methodology and metrics sections",
+        "containerDiv": "sankey-container",
+        "dimensions": {
+          "width": 1200,
+          "height": 600,
+          "margins": {"top": 10, "right": 150, "bottom": 10, "left": 150}
+        }
+      }
+    },
+    
+    "technicalNotes": {
+      "d3SankeyRequirements": [
+        "Nodes must be defined as array with consistent indices",
+        "Links must reference node indices, not names",
+        "Use nodeMap to convert names to indices for maintainability"
+      ],
+      
+      "errorHandling": {
+        "commonError": "Error: missing: [node name]",
+        "cause": "Links using string names instead of node indices",
+        "solution": "Create nodeMap and use nodeMap.get(name) for indices"
+      },
+      
+      "browserCompatibility": {
+        "tested": "Works with file:// protocol for local HTML files",
+        "dependencies": "External CDN links for D3 libraries must be accessible"
+      }
+    },
+    
+    "usageGuidance": {
+      "whenToUse": [
+        "Visualizing team capacity allocation across multiple initiatives",
+        "Identifying overallocation and underutilization patterns",
+        "Presenting work distribution to stakeholders",
+        "Planning resource reallocation decisions"
+      ],
+      
+      "customization": {
+        "colors": "Modify colorScale array for different team/initiative colors",
+        "highlighting": "Change stroke color logic to highlight different conditions",
+        "tooltips": "Enhance tooltip HTML to show additional metrics",
+        "layout": "Adjust nodePadding and nodeWidth for spacing"
+      }
+    }
+  }
+}

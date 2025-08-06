@@ -1,0 +1,245 @@
+{
+  "timestamp": "2025-01-31T02:12:00Z",
+  "category": "PERSONALITY_CONFIGURATION",
+  "personality": "Strategic Advisor",
+  
+  "configuration": {
+    "name": "Strategic Advisor",
+    "description": "Strategic planning expert specializing in OKRs and PI Objectives for SAFe organizations",
+    "icon": "🎯",
+    "version": "1.0",
+    
+    "capabilities": [
+      "Create industry-specific OKRs with best practices",
+      "Develop SAFe PI Objectives with business value",
+      "Analyze and improve existing objectives",
+      "Track OKR progress and suggest adjustments",
+      "Align team objectives with organizational strategy",
+      "Calculate WSJF scores",
+      "Facilitate objective setting workshops",
+      "Generate objective templates by industry"
+    ],
+    
+    "semanticOperations": [
+      {
+        "name": "create_okrs",
+        "description": "Create strategic OKRs based on context and industry best practices",
+        "parameters": ["context", "industry", "timeframe", "teamOrDepartment", "strategicThemes"]
+      },
+      {
+        "name": "create_pi_objectives",
+        "description": "Create SAFe PI Objectives with business value assignments",
+        "parameters": ["piName", "teams", "strategicThemes", "initiatives", "constraints"]
+      },
+      {
+        "name": "analyze_okrs",
+        "description": "Analyze OKRs for quality, alignment, and improvement opportunities",
+        "parameters": ["okrs", "context"]
+      }
+    ]
+  },
+  
+  "okrKnowledge": {
+    "bestPractices": {
+      "formula": "1 Clear Objective + 2-4 Measurable Key Results = Success",
+      "objectives": {
+        "characteristics": [
+          "Short, inspirational, and engaging",
+          "Directional and motivating",
+          "Ambitious yet realistic",
+          "Clear and easy to understand",
+          "Focus on transformation, not maintenance"
+        ],
+        "examples": {
+          "good": "Transform customer experience to industry-leading standards",
+          "bad": "Maintain current customer satisfaction levels"
+        }
+      },
+      "keyResults": {
+        "characteristics": [
+          "Must include a number/metric",
+          "Outcome-focused, not task-based",
+          "Clearly measurable progress",
+          "Time-bound and specific",
+          "2-5 key results per objective"
+        ],
+        "examples": {
+          "good": "Increase NPS score from 42 to 60 by Q4",
+          "bad": "Implement customer feedback system"
+        }
+      },
+      "quantities": {
+        "objectivesPerQuarter": 3,
+        "keyResultsPerObjective": "2-4",
+        "successThreshold": "70%",
+        "reviewCycle": "Quarterly with monthly updates"
+      }
+    },
+    
+    "industryTemplates": {
+      "banking": {
+        "focusAreas": ["Digital Transformation", "Customer Experience", "Risk Management", "Financial Inclusion"],
+        "exampleOKRs": [
+          {
+            "objective": "Accelerate digital banking adoption",
+            "keyResults": [
+              "Increase digital transactions by 30%",
+              "Achieve 4.5-star mobile app rating",
+              "Reduce branch dependency by 25%"
+            ]
+          }
+        ]
+      },
+      "insurance": {
+        "focusAreas": ["Claims Processing", "Digital Channels", "Product Innovation", "Compliance"],
+        "exampleOKRs": [
+          {
+            "objective": "Transform claims experience",
+            "keyResults": [
+              "Reduce processing time by 40%",
+              "Achieve 85% digital claims submission",
+              "Increase satisfaction score to 4.2/5"
+            ]
+          }
+        ]
+      },
+      "pharmaceutical": {
+        "focusAreas": ["Drug Development", "Clinical Trials", "Patient Outcomes", "Regulatory Compliance"],
+        "exampleOKRs": [
+          {
+            "objective": "Accelerate drug development pipeline",
+            "keyResults": [
+              "Reduce development cycle by 20%",
+              "Initiate 3 new clinical trials",
+              "Achieve 90% preclinical success rate"
+            ]
+          }
+        ]
+      },
+      "software": {
+        "focusAreas": ["Product Development", "Platform Reliability", "Customer Growth", "Innovation"],
+        "exampleOKRs": [
+          {
+            "objective": "Achieve product-market fit excellence",
+            "keyResults": [
+              "Increase monthly active users by 50%",
+              "Achieve 99.99% platform uptime",
+              "Launch 3 AI-powered features"
+            ]
+          }
+        ]
+      }
+    },
+    
+    "commonMistakes": [
+      {
+        "mistake": "Too many priorities",
+        "impact": "Lack of focus and diluted efforts",
+        "solution": "Limit to 3 objectives per quarter"
+      },
+      {
+        "mistake": "Tasks disguised as outcomes",
+        "impact": "Activity without impact measurement",
+        "solution": "Focus on what changes, not what you do"
+      },
+      {
+        "mistake": "Business-as-usual objectives",
+        "impact": "No transformation or growth",
+        "solution": "Set objectives that drive change"
+      },
+      {
+        "mistake": "Unrealistic targets",
+        "impact": "Team demotivation and burnout",
+        "solution": "Balance ambition with achievability"
+      }
+    ],
+    
+    "trends2025": [
+      "AI-powered OKR tracking and recommendations",
+      "Real-time progress monitoring",
+      "Predictive success analytics",
+      "Automated alignment checking",
+      "Integration with work management tools"
+    ]
+  },
+  
+  "piObjectiveKnowledge": {
+    "characteristics": [
+      "Specific and measurable",
+      "Achievable within PI timebox",
+      "Aligned with strategic themes",
+      "Has clear business value",
+      "Owned by specific teams"
+    ],
+    "businessValueScale": {
+      "10": "Critical - Regulatory/Compliance",
+      "9": "Critical - Revenue Impact",
+      "8": "High - Customer Satisfaction",
+      "7": "High - Operational Efficiency",
+      "6": "Medium - Innovation",
+      "5": "Medium - Technical Debt",
+      "4": "Low - Internal Improvement",
+      "3": "Low - Nice to Have"
+    },
+    "safeAlignment": {
+      "principles": [
+        "Support strategic themes",
+        "Enable business agility",
+        "Deliver value incrementally",
+        "Build quality in",
+        "Make value flow visible"
+      ],
+      "ceremonies": [
+        "PI Planning",
+        "System Demo",
+        "Inspect & Adapt",
+        "PI Confidence Vote"
+      ]
+    }
+  },
+  
+  "implementationGuidance": {
+    "gettingStarted": [
+      "Assess current state and maturity",
+      "Train leadership on OKR principles",
+      "Start with pilot teams",
+      "Use templates as starting points",
+      "Iterate and improve each cycle"
+    ],
+    
+    "successFactors": [
+      "Leadership commitment and role modeling",
+      "Clear communication of strategy",
+      "Regular check-ins and updates",
+      "Celebration of learning from failures",
+      "Tool support for tracking and visibility"
+    ],
+    
+    "integrationWithTargetProcess": {
+      "entities": ["PortfolioEpic", "Epic", "Feature"],
+      "customFields": [
+        "OKR_Objective",
+        "OKR_KeyResults",
+        "PI_Objective",
+        "Business_Value",
+        "WSJF_Score"
+      ],
+      "workflows": [
+        "Quarterly OKR planning",
+        "Monthly progress updates",
+        "PI Planning preparation",
+        "Business value assignment"
+      ]
+    }
+  },
+  
+  "reportReferences": {
+    "comprehensiveGuide": "/reports/comprehensive_okr_guide.html",
+    "industryExamples": {
+      "banking": "Digital transformation, customer experience, risk management",
+      "insurance": "Claims processing, product innovation, compliance",
+      "pharmaceutical": "Drug development, clinical trials, patient outcomes",
+      "software": "Product development, platform reliability, growth"
+    }
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "terminology_mappings": {
+    "business_to_api": {
+      "Portfolio": "Project",
+      "Program Increment": "Release",
+      "PI": "Release",
+      "Sprint": "TeamIteration"
+    },
+    "api_to_business": {
+      "Project": "Portfolio",
+      "Release": "Program Increment (PI)",
+      "TeamIteration": "Sprint"
+    },
+    "description": "TargetProcess uses different terminology in the API than in SAFe/Agile practices"
+  },
+  "api_endpoints": {
+    "metadata": "https://apptiocsgfa.tpondemand.com/api/v1/Index/meta",
+    "teamiteration_create": "/api/v2/TeamIteration",
+    "teamiteration_batch": "/api/v2/TeamIteration/bulk"
+  },
+  "entity_patterns": {
+    "TeamIteration": {
+      "required_fields": ["Name", "Team", "StartDate", "EndDate", "Release"],
+      "field_casing": "PascalCase",
+      "forbidden_fields": ["Project", "AgileReleaseTrain"],
+      "field_types": {
+        "Name": "string",
+        "Team": { "type": "object", "properties": { "Id": "number" } },
+        "StartDate": { "type": "string", "format": "YYYY-MM-DD" },
+        "EndDate": { "type": "string", "format": "YYYY-MM-DD" },
+        "Release": { "type": "object", "properties": { "Id": "number" } }
+      }
+    }
+  },
+  "common_errors": {
+    "deserializing_error": {
+      "message": "Error during deserializing resource",
+      "causes": ["Incorrect field names", "Wrong casing", "Invalid JSON structure"],
+      "solutions": ["Use PascalCase", "Validate JSON structure", "Check required fields"]
+    },
+    "portfolio_constraint": {
+      "message": "Planning Interval should be assigned to a Portfolio related to the Team of the Team Iteration",
+      "causes": ["Team and Release in different Projects", "Missing Portfolio relationship"],
+      "solutions": ["Verify Team and Release share same Project", "Check Portfolio assignments"]
+    },
+    "art_assignment_error": {
+      "message": "The Team requires access to the ART Portfolio. Please assign the Team to the respective Portfolio first",
+      "causes": ["Team not assigned to Project via TeamProject entity", "Missing TeamProject relationship"],
+      "solutions": [
+        "Create TeamProject entity to link Team to Project",
+        "Use POST to /api/v1/TeamProjects with {Team: {Id: teamId}, Project: {Id: projectId}}",
+        "After TeamProject creation, then assign Team to ART"
+      ],
+      "example_fix": {
+        "step1_create_teamproject": {
+          "url": "/api/v1/TeamProjects",
+          "method": "POST",
+          "body": {
+            "Team": { "Id": 4332 },
+            "Project": { "Id": 2909 }
+          }
+        },
+        "step2_assign_art": {
+          "url": "/api/v1/Teams/{teamId}",
+          "method": "POST", 
+          "body": {
+            "AgileReleaseTrain": { "Id": 73 }
+          }
+        }
+      }
+    }
+  },
+  "working_examples": {
+    "teamiteration_create": {
+      "Name": "PI1:TeamName:Sprint1",
+      "Team": { "Id": 4297 },
+      "StartDate": "2025-01-31",
+      "EndDate": "2025-02-14",
+      "Release": { "Id": 4538 }
+    }
+  },
+  "query_patterns": {
+    "teams_by_portfolio": {
+      "description": "Query teams associated with a specific portfolio/project",
+      "patterns": {
+        "by_id": {
+          "where": "Project.Id eq 2909",
+          "example_usage": "search_entities(type='Team', where='Project.Id eq 2909')"
+        },
+        "by_name": {
+          "where": "Project.Name eq 'AI for Everyone'",
+          "example_usage": "search_entities(type='Team', where='Project.Name eq \\'AI for Everyone\\'')"
+        }
+      },
+      "note": "Teams have a Project property that represents their portfolio assignment"
+    },
+    "releases_by_project": {
+      "description": "Query releases (PIs) for a specific project",
+      "pattern": "Project.Id eq 2909",
+      "entity_type": "Release"
+    },
+    "teamiterations_by_release": {
+      "description": "Query team iterations (sprints) for a specific release", 
+      "pattern": "Release.Id eq 4538",
+      "entity_type": "TeamIteration"
+    },
+    "entities_by_state": {
+      "description": "Query entities by their state/status",
+      "pattern": "EntityState.Name eq 'Open'",
+      "applicable_to": ["UserStory", "Bug", "Task", "Feature", "Epic"]
+    }
+  },
+  "known_issues": {
+    "teamiteration_portfolio_constraint": {
+      "description": "Some teams cannot have TeamIterations created via API despite correct Project associations",
+      "affected_teams": [4332, 4375],
+      "working_teams": [4297],
+      "investigation_date": "2025-07-29",
+      "status": "unresolved"
+    }
+  }
+}

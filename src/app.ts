@@ -4,6 +4,8 @@
  */
 
 import { createNeo4jContextStore } from './core/storage/neo4j-store.js';
+import { createNoOpContextStore } from './core/storage/no-op-store.js';
+import { createFileContextStore } from './core/storage/file-store.js';
 import { ContextManagerService } from './core/services/context-manager.service.js';
 import { SearchService, createSearchService } from './core/services/search.service.js';
 import { TemplateGeneratorService, createTemplateGeneratorService } from './core/services/template-generator.service.js';
@@ -12,6 +14,8 @@ import { BackupRecoveryService, createBackupRecoveryService } from './core/servi
 import { PerformanceMonitorService, createPerformanceMonitorService } from './core/services/performance-monitor.service.js';
 import { getDatabaseConfig, validateDatabaseConfig } from './config/database.config.js';
 import { logger } from './utils/logger.js';
+import path from 'path';
+import os from 'os';
 
 export interface PersistentContextStoreApp {
   contextStore: ReturnType<typeof createNeo4jContextStore>;
@@ -48,10 +52,18 @@ class PersistentContextStoreApplication implements PersistentContextStoreApp {
     
     // Get and validate configuration
     const config = getDatabaseConfig();
-    validateDatabaseConfig(config);
-
-    // Initialize core storage
-    this.contextStore = createNeo4jContextStore(config.neo4j);
+    
+    // Check if we should use no-op store (for testing/development)
+    const useNoOpStore = process.env.USE_NOOP_STORE === 'true' || process.env.NEO4J_URI === 'no-op';
+    
+    if (useNoOpStore) {
+      logger.warn('Using No-Op store for testing - data will not be persisted');
+      this.contextStore = createNoOpContextStore() as any;
+    } else {
+      validateDatabaseConfig(config);
+      // Initialize core storage
+      this.contextStore = createNeo4jContextStore(config.neo4j);
+    }
     
     // Initialize services
     this.contextManager = new ContextManagerService(this.contextStore);
@@ -111,9 +123,30 @@ class PersistentContextStoreApplication implements PersistentContextStoreApp {
       logger.info('Initializing Persistent Context Store application...');
 
       // Connect to database
-      logger.info('Connecting to Neo4j database...');
-      await this.contextStore.connect();
-      logger.info('✅ Database connection established');
+      logger.info('Connecting to database...');
+      
+      // Try Neo4j first, fall back to file store on authentication failure
+      if (!this.contextStore.isConnectedToDatabase()) {
+        try {
+          await this.contextStore.connect();
+          logger.info('✅ Neo4j database connection established');
+        } catch (error: any) {
+          if (error.code === 'Neo.ClientError.Security.Unauthorized' || 
+              error.message?.includes('unauthorized') ||
+              error.message?.includes('authentication')) {
+            logger.warn('Neo4j authentication failed, falling back to file-based storage');
+            
+            // Create file store
+            const dataDir = path.join(os.homedir(), '.persistent-context-store', 'data');
+            this.contextStore = createFileContextStore({ dataDir }) as any;
+            await this.contextStore.connect();
+            
+            logger.info('✅ File-based storage initialized at:', dataDir);
+          } else {
+            throw error;
+          }
+        }
+      }
 
       // Initialize context manager (which starts auto-save service)
       logger.info('Initializing context manager...');

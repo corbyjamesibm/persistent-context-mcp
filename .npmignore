@@ -1,0 +1,68 @@
+# Source files (only ship compiled)
+src/
+*.ts
+*.tsx
+!dist/**/*.d.ts
+
+# Development files
+.env
+.env.local
+*.log
+logs/
+coverage/
+.nyc_output/
+node_modules/
+
+# Test files
+__tests__/
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+test/
+tests/
+
+# Development configs
+.eslintrc*
+.prettierrc*
+jest.config.*
+tsconfig.json
+vite.config.ts
+
+# Documentation source
+docs/
+*.md
+!README.md
+!LICENSE
+
+# Git files
+.git/
+.gitignore
+.github/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Build artifacts we don't need
+*.map
+*.tsbuildinfo
+
+# Local data
+data/
+backups/
+persistent-context-store/
+saved-contexts/
+
+# Container files (include in package)
+# docker/
+# k8s/
+# scripts/
+
+# Temporary files
+tmp/
+temp/
+*.tmp

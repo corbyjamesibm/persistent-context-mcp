@@ -18,7 +18,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/corbyjames/persistent-context-mcp.git"
+    "url": "git+https://github.com/corbyjamesibm/persistent-context-mcp.git"
   },
   "keywords": [
     "mcp",
@@ -36,9 +36,9 @@
   "author": "Corby James",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/corbyjames/persistent-context-mcp/issues"
+    "url": "https://github.com/corbyjamesibm/persistent-context-mcp/issues"
   },
-  "homepage": "https://github.com/corbyjames/persistent-context-mcp#readme",
+  "homepage": "https://github.com/corbyjamesibm/persistent-context-mcp#readme",
   "scripts": {
     "start": "node dist/index.js",
     "start:mcp": "node dist/mcp-server.js",

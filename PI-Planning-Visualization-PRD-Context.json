@@ -1,0 +1,162 @@
+{
+  "document_type": "PRD_Context",
+  "title": "PI Planning Visualization for TargetProcess",
+  "version": "2.0",
+  "date": "2025-01-08",
+  "author": "Sarah (Product Owner)",
+  "summary": "Team-centric PI Planning Visualization tool for 2000 people across 100 teams in 8-10 ARTs",
+  
+  "key_decisions": {
+    "visualization": {
+      "primary_view": "force_directed_network",
+      "alternative_view": "sankey_diagram",
+      "multi_art_display": "layered_views",
+      "update_frequency": "5_minute_auto_refresh",
+      "center_point_system": "dynamic_entity_selection"
+    },
+    
+    "scale_requirements": {
+      "total_users": 2000,
+      "total_teams": 100,
+      "arts": "8-10",
+      "teams_per_art": "8-12",
+      "concurrent_users": "2000+",
+      "features_supported": "10000+"
+    },
+    
+    "permissions": {
+      "edit_access": ["Release Train Engineer", "Scrum Master"],
+      "read_access": ["Team Members", "Product Owners"],
+      "comment_access": ["Product Owners"]
+    },
+    
+    "mvp_features": [
+      "force_directed_network_visualization",
+      "hierarchical_navigation",
+      "dependency_analyzer",
+      "multi_art_layered_views"
+    ],
+    
+    "success_metrics": {
+      "primary": [
+        "dependency_resolution_95_percent",
+        "cross_team_collaboration_80_percent_improvement"
+      ],
+      "secondary": [
+        "missed_dependencies_under_5_percent",
+        "cross_art_visibility_100_percent"
+      ]
+    }
+  },
+  
+  "technical_architecture": {
+    "frontend": "React_TypeScript_D3js",
+    "state_management": "Redux",
+    "real_time": "WebSockets",
+    "backend": "NodeJS_GraphQL",
+    "database": "PostgreSQL_Redis",
+    "refresh_strategy": "5_minute_cycle"
+  },
+  
+  "performance_requirements": {
+    "load_time": "3_seconds_progressive",
+    "response_time": "500ms",
+    "search_performance": "1_second",
+    "data_strategy": [
+      "progressive_loading",
+      "aggregation_levels",
+      "search_first_interface"
+    ]
+  },
+  
+  "team_node_display": {
+    "required_information": [
+      "points_allocated_current_max",
+      "number_of_planned_features",
+      "dependency_count_incoming_outgoing",
+      "pi_objectives_alignment"
+    ]
+  },
+  
+  "entity_mapping": {
+    "Release": "Program_Increment",
+    "TeamIteration": "Sprint",
+    "Team": "Team_Node",
+    "User": "Person",
+    "AgileReleaseTrain": "ART_Layer"
+  },
+  
+  "implementation_phases": {
+    "phase_1_mvp": {
+      "duration": "weeks_1_8",
+      "deliverables": [
+        "force_directed_network",
+        "basic_multi_art",
+        "dependency_analyzer",
+        "targetprocess_integration"
+      ]
+    },
+    "phase_2_scale": {
+      "duration": "weeks_9_16",
+      "deliverables": [
+        "full_art_support",
+        "progressive_loading",
+        "sankey_view",
+        "performance_optimization"
+      ]
+    },
+    "phase_3_advanced": {
+      "duration": "weeks_17_24",
+      "deliverables": [
+        "program_board",
+        "what_if_scenarios",
+        "cross_art_workflows",
+        "real_time_collaboration"
+      ]
+    },
+    "phase_4_intelligence": {
+      "duration": "weeks_25_32",
+      "deliverables": [
+        "ai_predictions",
+        "capacity_optimization",
+        "portfolio_rollups",
+        "advanced_analytics"
+      ]
+    }
+  },
+  
+  "risks_mitigated": {
+    "scale_performance": "progressive_loading_search_first",
+    "api_limits": "5_minute_cache_batch_ops",
+    "user_adoption": "rte_sm_focus_training",
+    "cross_art_complexity": "layered_views_smart_filtering"
+  },
+  
+  "search_keywords": [
+    "PI Planning",
+    "TargetProcess",
+    "SAFe",
+    "Agile Release Train",
+    "Force Directed Network",
+    "Dependency Visualization",
+    "Team Capacity",
+    "Sprint Planning",
+    "Cross Team Dependencies",
+    "Multi ART",
+    "Program Increment",
+    "Scrum Master",
+    "Release Train Engineer",
+    "Sankey Diagram",
+    "Hierarchical Navigation",
+    "100 teams",
+    "2000 users",
+    "Enterprise Scale"
+  ],
+  
+  "related_files": [
+    "PI-Planning-Visualization-PRD.md",
+    "PI-Planning-Visualization-PRD-Report.md"
+  ],
+  
+  "context_notes": "This PRD was developed through iterative questioning with Sarah, focusing on team-centric visualization for large-scale PI Planning. The solution prioritizes dependency resolution and cross-team collaboration as primary success metrics. The force-directed network with dynamic center-point selection was chosen to allow flexible exploration of relationships between any entity (objective, initiative, epic, feature, team, or person)."
+}

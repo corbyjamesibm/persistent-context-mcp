@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PI Planning Context Search</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .search-box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 12px 20px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        
+        button:hover {
+            background: #5a67d8;
+        }
+        
+        button.secondary {
+            background: #48bb78;
+        }
+        
+        button.secondary:hover {
+            background: #38a169;
+        }
+        
+        .results {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            min-height: 400px;
+        }
+        
+        .result-item {
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #f7fafc;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+        }
+        
+        .result-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .result-meta {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .result-description {
+            color: #555;
+            line-height: 1.5;
+        }
+        
+        .features {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .feature-item {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #edf2f7;
+            border-radius: 4px;
+            margin: 4px;
+            font-size: 12px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        
+        .error {
+            background: #fff5f5;
+            border-left-color: #fc8181;
+            color: #c53030;
+        }
+        
+        .success {
+            background: #f0fff4;
+            border-left-color: #48bb78;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 PI Planning Context Search</h1>
+            <div class="subtitle">Search and retrieve PI Planning contexts from Neo4j (Owl)</div>
+        </div>
+        
+        <div class="search-box">
+            <input type="text" 
+                   class="search-input" 
+                   id="searchInput" 
+                   placeholder="Search for PI planning, sprint, features..."
+                   value="PI Planning">
+            <div class="button-group">
+                <button onclick="searchContexts()">Search Contexts</button>
+                <button onclick="loadPIPlanning()" class="secondary">Load All PI Planning</button>
+                <button onclick="showStats()" class="secondary">Show Statistics</button>
+            </div>
+        </div>
+        
+        <div class="results" id="results">
+            <div class="loading">Ready to search...</div>
+        </div>
+        
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-value" id="totalContexts">0</div>
+                <div class="stat-label">Total Contexts</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="piContexts">0</div>
+                <div class="stat-label">PI Planning Contexts</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="featuresCount">0</div>
+                <div class="stat-label">Features</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="techCount">0</div>
+                <div class="stat-label">Technologies</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const NEO4J_URL = 'http://localhost:7474/db/neo4j/tx/commit';
+        const AUTH = btoa('neo4j:neo4j123');
+        
+        async function runQuery(statement) {
+            try {
+                const response = await fetch(NEO4J_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Basic ' + AUTH,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        statements: [{ statement }]
+                    })
+                });
+                
+                const data = await response.json();
+                return data.results[0].data;
+            } catch (error) {
+                console.error('Query error:', error);
+                return [];
+            }
+        }
+        
+        async function searchContexts() {
+            const searchTerm = document.getElementById('searchInput').value;
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="loading">Searching...</div>';
+            
+            const query = `
+                MATCH (c:Context) 
+                WHERE c.name CONTAINS '${searchTerm}' 
+                   OR c.description CONTAINS '${searchTerm}'
+                   OR c.type CONTAINS '${searchTerm}'
+                RETURN c
+                ORDER BY c.timestamp DESC
+                LIMIT 20
+            `;
+            
+            const results = await runQuery(query);
+            displayResults(results);
+        }
+        
+        async function loadPIPlanning() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="loading">Loading PI Planning contexts...</div>';
+            
+            // Load main context
+            const contextQuery = `
+                MATCH (c:Context) 
+                WHERE c.name CONTAINS 'PI Planning'
+                RETURN c
+            `;
+            
+            const contexts = await runQuery(contextQuery);
+            
+            // Load features
+            const featuresQuery = `
+                MATCH (c:Context)-[:HAS_FEATURE]->(f:Feature)
+                WHERE c.name CONTAINS 'PI Planning'
+                RETURN f
+            `;
+            
+            const features = await runQuery(featuresQuery);
+            
+            displayPIPlanning(contexts, features);
+        }
+        
+        function displayResults(results) {
+            const resultsDiv = document.getElementById('results');
+            
+            if (results.length === 0) {
+                resultsDiv.innerHTML = '<div class="result-item error">No results found</div>';
+                return;
+            }
+            
+            let html = '';
+            results.forEach(item => {
+                const context = item.row[0];
+                html += createContextCard(context);
+            });
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        function displayPIPlanning(contexts, features) {
+            const resultsDiv = document.getElementById('results');
+            
+            let html = '<h3>PI Planning Context</h3>';
+            
+            if (contexts.length > 0) {
+                const context = contexts[0].row[0];
+                html += createDetailedContextCard(context);
+            }
+            
+            if (features.length > 0) {
+                html += '<h3 style="margin-top: 20px;">Features</h3>';
+                features.forEach(item => {
+                    const feature = item.row[0];
+                    html += createFeatureCard(feature);
+                });
+            }
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        function createContextCard(context) {
+            return `
+                <div class="result-item">
+                    <div class="result-title">${context.name || 'Unnamed Context'}</div>
+                    <div class="result-meta">
+                        Type: ${context.type || 'N/A'} | 
+                        ID: ${context.id || 'N/A'} |
+                        Time: ${context.timestamp ? new Date(context.timestamp).toLocaleString() : 'N/A'}
+                    </div>
+                    <div class="result-description">
+                        ${context.description || 'No description available'}
+                    </div>
+                    ${context.technologies ? `
+                        <div class="features">
+                            Technologies: ${context.technologies.map(t => 
+                                `<span class="feature-item">${t}</span>`
+                            ).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+        
+        function createDetailedContextCard(context) {
+            let components = [];
+            if (context.componentsJson) {
+                try {
+                    components = JSON.parse(context.componentsJson);
+                } catch (e) {}
+            }
+            
+            return `
+                <div class="result-item success">
+                    <div class="result-title">${context.name || 'Unnamed Context'}</div>
+                    <div class="result-meta">
+                        Sprint: ${context.sprint || 'N/A'} | 
+                        Team: ${context.team || 'N/A'} |
+                        Environment: ${context.environment || 'N/A'}
+                    </div>
+                    <div class="result-description">
+                        ${context.description || 'No description available'}
+                    </div>
+                    ${components.length > 0 ? `
+                        <div class="features">
+                            <strong>Components:</strong><br>
+                            ${components.map(c => 
+                                `<div style="margin: 5px 0;">
+                                    ✅ ${c.name} - ${c.status}
+                                </div>`
+                            ).join('')}
+                        </div>
+                    ` : ''}
+                    ${context.technologies ? `
+                        <div class="features">
+                            <strong>Technologies:</strong>
+                            ${context.technologies.map(t => 
+                                `<span class="feature-item">${t}</span>`
+                            ).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+        
+        function createFeatureCard(feature) {
+            return `
+                <div class="result-item">
+                    <div class="result-title">${feature.name}</div>
+                    <div class="result-meta">Status: ${feature.status}</div>
+                    <div class="result-description">${feature.description}</div>
+                </div>
+            `;
+        }
+        
+        async function showStats() {
+            const statsDiv = document.getElementById('stats');
+            statsDiv.style.display = 'grid';
+            
+            // Get counts
+            const totalContexts = await runQuery('MATCH (c:Context) RETURN count(c) as count');
+            const piContexts = await runQuery('MATCH (c:Context) WHERE c.name CONTAINS "PI" RETURN count(c) as count');
+            const features = await runQuery('MATCH (f:Feature) RETURN count(f) as count');
+            const techs = await runQuery('MATCH (t:Technology) RETURN count(t) as count');
+            
+            document.getElementById('totalContexts').textContent = totalContexts[0]?.row[0] || 0;
+            document.getElementById('piContexts').textContent = piContexts[0]?.row[0] || 0;
+            document.getElementById('featuresCount').textContent = features[0]?.row[0] || 0;
+            document.getElementById('techCount').textContent = techs[0]?.row[0] || 0;
+        }
+        
+        // Load PI Planning on page load
+        window.onload = () => {
+            loadPIPlanning();
+        };
+    </script>
+</body>
+</html>
